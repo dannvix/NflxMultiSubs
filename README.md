@@ -23,7 +23,6 @@ NflxMultiSubs
 - 使用過程中發生的問題，本套件與開發者概不負責哦，請小心使用
 - 本套件與 Netflix 原廠沒有關係，Netflix 相關資源版權均屬 Netflix, Inc. 所有
 - 本套件可能與其他套件相衝（如 [netflix-1080p](https://github.com/truedread/netflix-1080p)），很遺憾請擇一使用
-- __$主字幕為西文語系 (text-based) 時，可能發生兩字幕重疊的問題，之後有空再修__
 
 
 下載與安裝
