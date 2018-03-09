@@ -33,6 +33,21 @@ Best ever Chrome extension to unleash bilingual subtitles on Netflix!
 - 請自行於本專案的 [Release](https://github.com/dannvix/NflxMultiSubs/releases) 頁面下載（內行人就知道該如何安裝 XD）
 
 
+遇到問題怎麼辦？
+----------------
+1. 在 Netflix 播放頁面多按幾次重新整理看看 XD
+2. 清除瀏覽器快取檔案，再回到 Netflix 播放頁面試試
+    - Chrome > Clear Browsering Data
+    - Time range 選 All time
+    - 清除項目只勾選 Cached images and files 就好
+    - 確認無誤後，按 Clear data
+3. 如果還不能解決問題，請幫忙蒐集執行記錄（如下圖），然後貼到 [Issues](https://github.com/dannvix/NflxMultiSubs/issues) 回報
+    - View > Developer > JavaScript Console
+    - 希望也能同時提供您使用的 Chrome 版本、螢幕解析度、此套件的版本等資訊
+
+![JavaScript console logs](docs/js-console.png?raw=true)
+
+
 Licenses
 --------
 MIT. Refer to [LICENSE.md](LICENSE.md) for details.
