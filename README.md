@@ -1,5 +1,5 @@
-![NflxMultiSubs](docs/icon.png =32x32) NflxMultiSubs
-====================================================
+<img src="docs/icon.png?raw=true" height="48"> NflxMultiSubs
+============================================================
 全球首款支援 Netflix 全語言雙字幕的 Chrome 擴充套件，提供您更佳的觀影體驗！
 Best ever Chrome extension to unleash bilingual subtitles on Netflix!
 
