@@ -1,6 +1,6 @@
 <img src="docs/icon.png?raw=true" height="48"> NflxMultiSubs
 ============================================================
-全球首款支援 Netflix 全語言雙字幕的 Chrome 擴充套件，提供您更佳的觀影體驗！
+全球首款支援 Netflix 全語言雙字幕的 Chrome 擴充套件，提供您更佳的觀影體驗！  
 Best ever Chrome extension to unleash bilingual subtitles on Netflix!
 
 
@@ -13,7 +13,7 @@ Best ever Chrome extension to unleash bilingual subtitles on Netflix!
 - 順便啟用了 1080p 高畫質播放 :)
 
 
-一看就懂
+直接看圖
 --------
 ![中文、日語雙字幕](docs/zh-ja.jpg?raw=true)
 ![整合原生語言選單](docs/popup-menu.jpg?raw=true)
@@ -26,9 +26,9 @@ Best ever Chrome extension to unleash bilingual subtitles on Netflix!
 - 本套件可能與其他套件相衝（如 [netflix-1080p](https://github.com/truedread/netflix-1080p)），很遺憾請擇一使用
 
 
-下載與安裝
+下載測試版
 ----------
-- 目前是先行測試版！仍有未完善之處……之後記得回來裝正式版喔！XD
+- __目前是先行測試版！仍有未完善之處……之後記得回來裝正式版喔！__
 - 可能於近期上架到 [Chrome Web Store](https://chrome.google.com/webstore/)
 - 請自行於本專案的 [Release](https://github.com/dannvix/NflxMultiSubs/releases) 頁面下載（內行人就知道該如何安裝 XD）
 
