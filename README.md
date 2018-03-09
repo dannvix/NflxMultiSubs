@@ -1,9 +1,10 @@
-NflxMultiSubs
-=============
+![NflxMultiSubs](docs/icon.png =32x32) NflxMultiSubs
+====================================================
 全球首款支援 Netflix 全語言雙字幕的 Chrome 擴充套件，提供您更佳的觀影體驗！
+Best ever Chrome extension to unleash bilingual subtitles on Netflix!
 
 
-特點
+特色
 ----
 - 坊間首款全自動支援日語等語言 (image-based) 第二字幕的擴充套件
 - 智慧選擇雙語字幕：看日本動畫顯示日語，看美劇顯示英文
@@ -12,13 +13,13 @@ NflxMultiSubs
 - 順便啟用了 1080p 高畫質播放 :)
 
 
-示例畫面
+一看就懂
 --------
 ![中文、日語雙字幕](docs/zh-ja.jpg?raw=true)
 ![整合原生語言選單](docs/popup-menu.jpg?raw=true)
 
 
-行前須知 & 已知問題
+使用須知 & 已知問題
 -------------------
 - 使用過程中發生的問題，本套件與開發者概不負責哦，請小心使用
 - 本套件與 Netflix 原廠沒有關係，Netflix 相關資源版權均屬 Netflix, Inc. 所有
@@ -27,33 +28,11 @@ NflxMultiSubs
 
 下載與安裝
 ----------
+- 目前是先行測試版！仍有未完善之處……之後記得回來裝正式版喔！XD
 - 可能於近期上架到 [Chrome Web Store](https://chrome.google.com/webstore/)
 - 請自行於本專案的 [Release](https://github.com/dannvix/NflxMultiSubs/releases) 頁面下載（內行人就知道該如何安裝 XD）
 
 
-----
-
-
 Licenses
-========
-
-NflxMultiSubs (This Project) (MIT)
-----------------------------------
-Copyright (c) 2018 Dan Chen
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
-[JSZip](https://stuk.github.io/jszip/) (MIT)
---------------------------------------------
-Copyright (c) 2009-2016 Stuart Knightley, David Duponchel, Franz Buchinger, António Afonso
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+--------
+MIT. Refer to [LICENSE.md](LICENSE.md) for details.
