@@ -591,6 +591,9 @@ class NflxMultiSubsManager {
 
   updateManifest(manifest) {
     // connect with background script
+    // FIXME: should disconnect this port while there's no video playing, to gray out our icon;
+    // However, we can't disconnect when <video> not found in the renderer loop,
+    // because there's a small time gap between updateManifest() and <video> is initialize.
     if (!gMsgPort) {
       try {
         const extensionId = window.__nflxMultiSubsExtId;

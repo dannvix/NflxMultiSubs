@@ -6,12 +6,6 @@ TODO
 
 Bugfixes
 --------
-- [ ] 從 Netflix 影片目錄跳轉到播放器時，會一直轉圈圈
-    - 這是由於本套件預設會將 Netflix 取得 player core 的 GET 攔下，以便 patch code
-    - 這個跳轉是用 `history.pushState()` 做的，Chrome 在切換過去之後不會載入套件的 content script
-    - 所以就沒人去幫 Netflix 載入播放器 XD
-    - 目前的 workaround 是進入播放頁面之後按 refresh，待我們的 content script 掛載即可，但有點影響使用體驗
-
 - [ ] 首次載入 image-based 的第二字幕（如中文、日文）時很慢
     - 因為 image-based subtitles 是個好幾 MB 的 ZIP archive，大概要抓個 30 秒
     - 下載速度慢的原因不明，暫時猜測是我們抓字幕時亂挑 CDN 導致

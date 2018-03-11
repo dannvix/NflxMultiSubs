@@ -35,14 +35,14 @@
 
   "content_scripts": [
     {
-      "matches": ["https://www.netflix.com/watch/*"],
+      "matches": ["https://www.netflix.com/*"],
       "js": ["acorn.min.js", "content.min.js"],
       "run_at": "document_start"
     }
   ],
 
   "externally_connectable": {
-    "matches": ["https://www.netflix.com/watch/*"]
+    "matches": ["https://www.netflix.com/*"]
   },
 
   "web_accessible_resources": [
