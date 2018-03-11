@@ -1,0 +1,52 @@
+{
+  "manifest_version": 2,
+  "author": "Dan Chen",
+
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "storage",
+    "https://www.netflix.com/watch/*",
+    "https://assets.nflxext.com/*"
+  ],
+
+  "background": {
+    "scripts": [
+      "background.min.js"
+    ]
+  },
+
+  "browser_action": {
+    "default_icon": "icon-gray.png",
+    "default_popup": "settings.html"
+  },
+
+  "options_ui": {
+    "page": "settings.html",
+    "chrome_style": true
+  },
+
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "128": "icon128.png",
+    "512": "icon.png"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://www.netflix.com/watch/*"],
+      "js": ["acorn.min.js", "content.min.js"],
+      "run_at": "document_start"
+    }
+  ],
+
+  "externally_connectable": {
+    "matches": ["https://www.netflix.com/watch/*"]
+  },
+
+  "web_accessible_resources": [
+    "jszip.min.js",
+    "nflxmultisubs.min.js"
+  ]
+}

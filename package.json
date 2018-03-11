@@ -1,0 +1,20 @@
+{
+  "name": "NflxMultiSubs",
+  "description": "Bilingual Subtitles & Enhanced Experiences for Netflix",
+  "author": "Dan Chen",
+  "version": "1.5.1",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "node utils/build.js",
+    "pack": "node utils/pack.js"
+  },
+  "dependencies": {
+    "acorn": "*",
+    "jszip": "*"
+  },
+  "devDependencies": {
+    "babel-minify": "*",
+    "fs-extra": "*"
+  }
+}

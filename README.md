@@ -13,6 +13,7 @@ Best ever Chrome extension to unleash bilingual subtitles on Netflix!
 - 整合原生 Netflix 選單，不需離開播放介面即可切換語言
 - Netflix 有提供的字幕通通可以選，不需要另外找字幕組
 - 順便啟用了 1080p 高畫質播放 :)
+- 開放原始碼！
 
 
 
@@ -28,14 +29,13 @@ Best ever Chrome extension to unleash bilingual subtitles on Netflix!
 - 使用過程中發生的問題，本套件與開發者概不負責哦，請謹慎使用
 - 本套件與 Netflix, Inc. 原廠沒有關係，各資源版權均屬原創作者所有
 - 本套件可能與其他 Netflix 相關套件相衝（如 [netflix-1080p](https://github.com/truedread/netflix-1080p)），很遺憾請擇一使用
-- 本套件可能與「廣告阻擋套件」相衝，目前請自行解決 XD
+- 本套件可能與「廣告阻擋套件」（如 [uBlock Origin](https://chrome.google.com/webstore/detail/ublock-origin/cjpalhdlnbpafiamejdnhcphjbkeiagm) 等）相衝，目前請自行解決 XD
 - 目前 text-based 第二字幕沒有處理 right-to-left (RTL) 語系
 
 
 
 上架囉！趕快去下載
 ------------------
-- 原始碼將於近期開放（再整理一下……）
 - 狐狸們放心，我們計劃推出 Firefox 版本
 
 [![Download on Chrome Web Store](docs/chrome-webstore-badge58.png?raw=true)](https://chrome.google.com/webstore/detail/pjhnilfooknlkdonmjnleaomamfehkli/)
@@ -47,7 +47,7 @@ Best ever Chrome extension to unleash bilingual subtitles on Netflix!
 ### Netflix 播放器一直轉圈圈，最後跳出錯誤訊息
 - 通常從「影片列表」進到「播放頁面」會發生這種狀況
 - 多按幾次重新整理 (F5) 試試看 XD
-- 還是不行的話，可能是被「廣告阻擋套件」誤判擋下來了，請加入白名單或暫時停用
+- 還是不行的話，可能是被「廣告阻擋套件」誤判擋下來了，請將 `netflix.com` 加入白名單或暫時停用該套件
 
 ### 主字幕跟第二字幕分很開
 - 通常只有在進度條顯示的時候才會發生，等到進度條隱藏就好了
@@ -94,6 +94,13 @@ Best ever Chrome extension to unleash bilingual subtitles on Netflix!
     - 可以關閉 Developer mode 了
 
 ![Update Chrome extensions manually](docs/chrome-ext-update-manually.png?raw=true)
+
+
+
+開源囉！想一起改進本套件？
+--------------------------
+- Clone 之後跑 `$ npm install && npm run build`
+- 參見 [TODO.md](TODO.md) 的計劃事項
 
 
 
