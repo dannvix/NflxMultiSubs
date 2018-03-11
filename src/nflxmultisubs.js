@@ -17,7 +17,8 @@ let gMsgPort;
 
 // TODO: sync this with configs coming from pop-up/options config UI
 let gRenderOptions = {
-  videoRatio: (1920 / 1080),
+  videoRatio: (1920 / 1080), // FIXME: this is not an option; it's a state
+
   centerLinePos: 0.5,
   topBaselinePos: 0.15,
   btmBaselinePos: 0.85,
@@ -50,15 +51,18 @@ class SubtitleBase {
   }
 
   activate(options) {
-    this.active = true;
-    if (this.state === 'GENESIS') {
-      this.state = 'LOADING';
-      console.log(`Subtitle "${this.lang}" downloading`);
-      this._download().then(() => {
-        this.state = 'READY';
-        console.log(`Subtitle "${this.lang}" loaded`);
-      });
-    }
+    return new Promise((resolve, reject) => {
+      this.active = true;
+      if (this.state === 'GENESIS') {
+        this.state = 'LOADING';
+        console.log(`Subtitle "${this.lang}" downloading`);
+        this._download().then(() => {
+          this.state = 'READY';
+          console.log(`Subtitle "${this.lang}" loaded`);
+          resolve(this);
+        });
+      }
+    });
   }
 
   deactivate(){
@@ -101,6 +105,7 @@ class DummySubtitle extends SubtitleBase {
 
   activate() {
     this.active = true;
+    return Promise.resolve();
   }
 }
 
@@ -314,13 +319,21 @@ class SubtitleMenu {
       <use filter="" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#nfplayerCheck"></use>
       </svg></span>`;
 
+    const loadingIcon = `<span class="video-controls-check">
+      <svg class="svg-icon svg-icon-nfplayerCheck" focusable="false" viewBox="0 0 50 50">
+          <path d="M 0 21 C10 56, 40 56, 50 21 L 45 19 C40 41, 10 41, 10 19" stroke="transparent" fill="hsl(15,100%,50%)">
+            <animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.5s" repeatCount="indefinite"/>
+          </path>
+      </svg></span>`;
+
     this.elem.innerHTML = `<li class="list-header">Secondary Subtitles</li>`;
     gSubtitles.forEach((sub, id) => {
       let item = document.createElement('li');
       item.classList.add('track');
       if (sub.active) {
+        const icon = (sub.state === 'LOADING') ? loadingIcon : checkIcon;
         item.classList.add('selected');
-        item.innerHTML = `${checkIcon}${sub.lang}`;
+        item.innerHTML = `${icon}${sub.lang}`;
       }
       else {
         item.innerHTML = sub.lang;
@@ -377,9 +390,9 @@ activateSubtitle = (id) => {
   gSubtitles.forEach(sub => sub.deactivate());
   const sub = gSubtitles[id];
   if (sub) {
-    sub.activate();
+    sub.activate().then(() => gSubtitleMenu && gSubtitleMenu.render());
   }
-  gSubtitleMenu.render();
+  gSubtitleMenu && gSubtitleMenu.render();
 };
 
 const buildSecondarySubtitleElement = (options) => {
