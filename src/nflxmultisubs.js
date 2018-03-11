@@ -558,8 +558,8 @@ class RendererLoop {
           if (!container) return;
 
           const textContent = container.textContent;
-          if (lastScaledPrimaryTextContent === textContent) return;
-          lastScaledPrimaryTextContent = textContent;
+          if (this.lastScaledPrimaryTextContent === textContent) return;
+          this.lastScaledPrimaryTextContent = textContent;
 
           const style = parentNode.querySelector('style');
           if (!style) return;
