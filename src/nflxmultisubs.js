@@ -13,7 +13,7 @@ const console = {
 
 // global states
 let gSubtitles = [], gSubtitleMenu;
-let gMsgPort;
+let gMsgPort, gRendererLoop;
 
 // TODO: sync this with configs coming from pop-up/options config UI
 let gRenderOptions = {
@@ -421,179 +421,210 @@ const buildSecondarySubtitleElement = (options) => {
 
 
 // FIXME: refactor this function :-(
-let lastScaledPrimaryTextContent; // reduce unnecessary work (quite dirty here)
-let isRenderDirty; // windows resize or config change, force re-render
-const renderEverything = () => {
-  const forceRender = !!isRenderDirty;
-  try {
-    const videoElem = document.querySelector('#appMountPoint video');
-    if (videoElem) {
-      let controlsActive = false;
-      const controlsElem = document.querySelector('.controls');
-      if (controlsElem) {
-        if (!controlsElem.style.zIndex) {
-          // elevate the control bar's z-index
-          controlsElem.style.zIndex = 3;
-        }
-        if (controlsElem.classList.contains('active')) {
-          controlsActive = true;
-        }
-      }
 
-      // install subtitle container
-      let subtitleWrapperElem;
-      const playerContainerElem = document.querySelector('.nf-player-container');
-      if (playerContainerElem) {
-        subtitleWrapperElem = playerContainerElem.querySelector('.nflxmultisubs-subtitle-wrapper');
-        if (!subtitleWrapperElem) {
-          subtitleWrapperElem = buildSecondarySubtitleElement(gRenderOptions);
-          playerContainerElem.appendChild(subtitleWrapperElem);
-        }
-      }
+class RendererLoop {
+  constructor() {
+    this.isRunning = false;
+    this.lastScaledPrimaryTextContent; // reduce unnecessary work (quite dirty here)
+    this.isRenderDirty; // windows resize or config change, force re-render
+  }
 
-      // render & apply rendered elements
-      if (subtitleWrapperElem) {
-        const subSvg = subtitleWrapperElem.querySelector('svg');
-        if (subSvg) {
-          const seconds = videoElem.currentTime;
-          const sub = gSubtitles.find(sub => sub.active);
-          if (sub) {
-            if (sub instanceof TextSubtitle) {
-              const rect = videoElem.getBoundingClientRect();
-              sub.setExtent(rect.width, rect.height);
-            }
+  setRenderDirty() {
+    this.isRenderDirty = true;
+  }
 
-            const renderedElems = sub.render(seconds, gRenderOptions, forceRender);
-            if (renderedElems) {
-              const [ extentWidth, extentHeight ] = sub.getExtent();
-              if (extentWidth && extentHeight) {
-                subSvg.setAttribute('viewBox', `0 0 ${extentWidth} ${extentHeight}`);
-              }
-              [].forEach.call(subSvg.querySelectorAll('*'), elem => elem.parentNode.removeChild(elem));
-              renderedElems.forEach(elem => subSvg.appendChild(elem));
-            }
+  start() {
+    this.isRunning = true;
+    window.requestAnimationFrame(this.loop.bind(this));
+  }
+
+  stop() {
+    this.isRunning = false;
+  }
+
+  loop() {
+    const forceRender = !!this.isRenderDirty;
+    try {
+      const videoElem = document.querySelector('#appMountPoint video');
+      if (videoElem) {
+        let controlsActive = false;
+        const controlsElem = document.querySelector('.controls');
+        if (controlsElem) {
+          if (!controlsElem.style.zIndex) {
+            // elevate the control bar's z-index
+            controlsElem.style.zIndex = 3;
+          }
+          if (controlsElem.classList.contains('active')) {
+            controlsActive = true;
           }
         }
-        // FIXME: dirty transform & magic offets
-        // this leads to a big gap between primary & secondary subtitles
-        // when the progress bar is shown
-        subtitleWrapperElem.style.top = (controlsActive) ? '-100px' : '0';
-      }
 
-      // transform & scale the primary image-based subtitles
-      const primaryImageSubSvg = document.querySelector('.image-based-timed-text svg');
-      if (primaryImageSubSvg) {
-        let unscaledImgs = primaryImageSubSvg.querySelectorAll('image:not(.nflxmultisubs-scaled');
-        if (unscaledImgs.length > 0) {
-          const viewBox = primaryImageSubSvg.getAttributeNS(null, 'viewBox');
-          const [ extentWidth, extentHeight ] = viewBox.split(' ').slice(-2).map(n => parseInt(n));
+        // install subtitle container
+        let subtitleWrapperElem;
+        const playerContainerElem = document.querySelector('.nf-player-container');
+        if (playerContainerElem) {
+          subtitleWrapperElem = playerContainerElem.querySelector('.nflxmultisubs-subtitle-wrapper');
+          if (!subtitleWrapperElem) {
+            subtitleWrapperElem = buildSecondarySubtitleElement(gRenderOptions);
+            playerContainerElem.appendChild(subtitleWrapperElem);
+          }
+        }
 
-          // TODO: if there's no secondary subtitle, center the primary on baseline
+        // render & apply rendered elements
+        if (subtitleWrapperElem) {
+          const subSvg = subtitleWrapperElem.querySelector('svg');
+          if (subSvg) {
+            const seconds = videoElem.currentTime;
+            const sub = gSubtitles.find(sub => sub.active);
+            if (sub) {
+              if (sub instanceof TextSubtitle) {
+                const rect = videoElem.getBoundingClientRect();
+                sub.setExtent(rect.width, rect.height);
+              }
+
+              const renderedElems = sub.render(seconds, gRenderOptions, forceRender);
+              if (renderedElems) {
+                const [ extentWidth, extentHeight ] = sub.getExtent();
+                if (extentWidth && extentHeight) {
+                  subSvg.setAttribute('viewBox', `0 0 ${extentWidth} ${extentHeight}`);
+                }
+                [].forEach.call(subSvg.querySelectorAll('*'), elem => elem.parentNode.removeChild(elem));
+                renderedElems.forEach(elem => subSvg.appendChild(elem));
+              }
+            }
+          }
+          // FIXME: dirty transform & magic offets
+          // this leads to a big gap between primary & secondary subtitles
+          // when the progress bar is shown
+          subtitleWrapperElem.style.top = (controlsActive) ? '-100px' : '0';
+        }
+
+        // transform & scale the primary image-based subtitles
+        const primaryImageSubSvg = document.querySelector('.image-based-timed-text svg');
+        if (primaryImageSubSvg) {
+          let unscaledImgs = primaryImageSubSvg.querySelectorAll('image:not(.nflxmultisubs-scaled');
+          if (unscaledImgs.length > 0) {
+            const viewBox = primaryImageSubSvg.getAttributeNS(null, 'viewBox');
+            const [ extentWidth, extentHeight ] = viewBox.split(' ').slice(-2).map(n => parseInt(n));
+
+            // TODO: if there's no secondary subtitle, center the primary on baseline
+            const options = gRenderOptions;
+            const centerLine = extentHeight * options.centerLinePos;
+            const topBaseline = extentHeight * options.topBaselinePos;
+            const btmBaseline = extentHeight * options.btmBaselinePos;
+            const scale = options.primaryImageScale;
+            const opacity = options.primaryImageOpacity;
+
+            [].forEach.call(unscaledImgs, img => {
+              img.classList.add('nflxmultisubs-scaled');
+
+              const left = parseInt(img.getAttributeNS(null, 'x'));
+              const top = parseInt(img.getAttributeNS(null, 'y'));
+              const width = parseInt(img.getAttributeNS(null, 'width'));
+              const height = parseInt(img.getAttributeNS(null, 'height'));
+              const [ newWidth, newHeight ] = [ width * scale, height * scale ];
+              const newLeft = (left + 0.5 * (width - newWidth));
+              const newTop = (top <= centerLine) ? (topBaseline - newHeight) : (btmBaseline - newHeight);
+
+              img.setAttributeNS(null, 'width', newWidth);
+              img.setAttributeNS(null, 'height', newHeight);
+              img.setAttributeNS(null, 'x', newLeft);
+              img.setAttributeNS(null, 'y', newTop);
+              img.setAttributeNS(null, 'opacity', opacity);
+            });
+          }
+        }
+
+        // transform & scale the primary text-based subtitles
+        const primaryTextSubDiv = document.querySelector('.player-timedtext');
+        if (primaryTextSubDiv) (() => {
+          let parentNode = primaryTextSubDiv.parentNode;
+          if (!parentNode.classList.contains('nflxmultisubs-primary-wrapper')) {
+            // let's use `<style>` + `!imporant` to outrun the offical player...
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('nflxmultisubs-primary-wrapper');
+            wrapper.style = 'position:absolute; width:100%; height:100%; top:0; left:0;';
+
+            const styleElem = document.createElement('style');
+            wrapper.appendChild(styleElem);
+
+            // wrap the offical text-based subtitle container, hehe!
+            parentNode.insertBefore(wrapper, primaryTextSubDiv);
+            wrapper.appendChild(primaryTextSubDiv);
+            parentNode = wrapper;
+          }
+
+          const container = primaryTextSubDiv.querySelector('.player-timedtext-text-container');
+          if (!container) return;
+
+          const textContent = container.textContent;
+          if (lastScaledPrimaryTextContent === textContent) return;
+          lastScaledPrimaryTextContent = textContent;
+
+          const style = parentNode.querySelector('style');
+          if (!style) return;
+
+          const textSpan = container.querySelector('span');
+          if (!textSpan) return;
+
+          const fontSize = parseInt(textSpan.style.fontSize);
+          if (!fontSize) return;
+
           const options = gRenderOptions;
-          const centerLine = extentHeight * options.centerLinePos;
-          const topBaseline = extentHeight * options.topBaselinePos;
+          const opacity = options.primaryTextOpacity;
+          const scale = options.primaryTextScale;
+          const newFontSize = (fontSize * scale);
+          const styleText = `.player-timedtext-text-container span {
+              font-size: ${newFontSize}px !important;
+              opacity: ${opacity};
+            }`;
+          style.textContent = styleText;
+
+          const rect = primaryTextSubDiv.getBoundingClientRect();
+          const [ extentWidth, extentHeight ] = [ rect.width, rect.height ];
+
           const btmBaseline = extentHeight * options.btmBaselinePos;
-          const scale = options.primaryImageScale;
-          const opacity = options.primaryImageOpacity;
+          const { left, top, width, height } = container.getBoundingClientRect();
+          const newLeft = ((extentWidth * 0.5) - (width * 0.5));
+          const newTop = (btmBaseline - height);
 
-          [].forEach.call(unscaledImgs, img => {
-            img.classList.add('nflxmultisubs-scaled');
+          style.textContent = styleText + '\n' + `
+            .player-timedtext-text-container {
+              top: ${newTop}px !important;
+              left: ${newLeft}px !important;
+            }`;
+        })();
 
-            const left = parseInt(img.getAttributeNS(null, 'x'));
-            const top = parseInt(img.getAttributeNS(null, 'y'));
-            const width = parseInt(img.getAttributeNS(null, 'width'));
-            const height = parseInt(img.getAttributeNS(null, 'height'));
-            const [ newWidth, newHeight ] = [ width * scale, height * scale ];
-            const newLeft = (left + 0.5 * (width - newWidth));
-            const newTop = (top <= centerLine) ? (topBaseline - newHeight) : (btmBaseline - newHeight);
-
-            img.setAttributeNS(null, 'width', newWidth);
-            img.setAttributeNS(null, 'height', newHeight);
-            img.setAttributeNS(null, 'x', newLeft);
-            img.setAttributeNS(null, 'y', newTop);
-            img.setAttributeNS(null, 'opacity', opacity);
-          });
+        this.isRenderDirty = false;
+      }
+      else {
+        // <video> not found, check if we're in player pagg
+        const isInPlayerPage = /netflix\.com\/watch/i.test(window.location.href);
+        if (!isInPlayerPage) {
+          if (gMsgPort) {
+            gMsgPort.disconnect(); // disconnect with background to gray out our icon
+            gMsgPort = null;
+          }
+          this.stop();
         }
       }
-
-      // transform & scale the primary text-based subtitles
-      const primaryTextSubDiv = document.querySelector('.player-timedtext');
-      if (primaryTextSubDiv) (() => {
-        let parentNode = primaryTextSubDiv.parentNode;
-        if (!parentNode.classList.contains('nflxmultisubs-primary-wrapper')) {
-          // let's use `<style>` + `!imporant` to outrun the offical player...
-          const wrapper = document.createElement('div');
-          wrapper.classList.add('nflxmultisubs-primary-wrapper');
-          wrapper.style = 'position:absolute; width:100%; height:100%; top:0; left:0;';
-
-          const styleElem = document.createElement('style');
-          wrapper.appendChild(styleElem);
-
-          // wrap the offical text-based subtitle container, hehe!
-          parentNode.insertBefore(wrapper, primaryTextSubDiv);
-          wrapper.appendChild(primaryTextSubDiv);
-          parentNode = wrapper;
-        }
-
-        const container = primaryTextSubDiv.querySelector('.player-timedtext-text-container');
-        if (!container) return;
-
-        const textContent = container.textContent;
-        if (lastScaledPrimaryTextContent === textContent) return;
-        lastScaledPrimaryTextContent = textContent;
-
-        const style = parentNode.querySelector('style');
-        if (!style) return;
-
-        const textSpan = container.querySelector('span');
-        if (!textSpan) return;
-
-        const fontSize = parseInt(textSpan.style.fontSize);
-        if (!fontSize) return;
-
-        const options = gRenderOptions;
-        const opacity = options.primaryTextOpacity;
-        const scale = options.primaryTextScale;
-        const newFontSize = (fontSize * scale);
-        const styleText = `.player-timedtext-text-container span {
-            font-size: ${newFontSize}px !important;
-            opacity: ${opacity};
-          }`;
-        style.textContent = styleText;
-
-        const rect = primaryTextSubDiv.getBoundingClientRect();
-        const [ extentWidth, extentHeight ] = [ rect.width, rect.height ];
-
-        const btmBaseline = extentHeight * options.btmBaselinePos;
-        const { left, top, width, height } = container.getBoundingClientRect();
-        const newLeft = ((extentWidth * 0.5) - (width * 0.5));
-        const newTop = (btmBaseline - height);
-
-        style.textContent = styleText + '\n' + `
-          .player-timedtext-text-container {
-            top: ${newTop}px !important;
-            left: ${newLeft}px !important;
-          }`;
-      })();
+      this.isRunning && window.requestAnimationFrame(this.loop.bind(this));
     }
-    isRenderDirty = false;
-    window.requestAnimationFrame(renderEverything);
+    catch (err) {
+      console.error('Fatal: ', err);
+    }
   }
-  catch (err) {
-    console.error('Fatal: ', err);
-  }
-};
-window.requestAnimationFrame(renderEverything);
+}
 
 
 window.addEventListener('resize', (evt) => {
-  isRenderDirty = true;
-  console.log('Resize: ',
+  gRendererLoop && gRenderOptions.setRenderDirty();
+  console.log('Resize:',
     `${window.innerWidth}x${window.innerHeight} (${evt.timeStamp})`);
 });
 
-// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 
 class NflxMultiSubsManager {
   constructor() {
@@ -603,6 +634,9 @@ class NflxMultiSubsManager {
   }
 
   updateManifest(manifest) {
+    const isInPlayerPage = /netflix\.com\/watch/i.test(window.location.href);
+    if (!isInPlayerPage) return;
+
     // connect with background script
     // FIXME: should disconnect this port while there's no video playing, to gray out our icon;
     // However, we can't disconnect when <video> not found in the renderer loop,
@@ -638,42 +672,56 @@ class NflxMultiSubsManager {
       console.log(`Manifest: ${manifest.movieId}`);
 
       const movieChanged = (manifest.movieId !== this.lastMovieId);
-      if (!movieChanged) return;
+      if (movieChanged) {
+        this.lastMovieId = manifest.movieId;
+        gSubtitles = buildSubtitleList(manifest.textTracks);
 
-      this.lastMovieId = manifest.movieId;
-      gSubtitles = buildSubtitleList(manifest.textTracks);
+        gSubtitleMenu = new SubtitleMenu();
+        gSubtitleMenu.render();
 
-      gSubtitleMenu = new SubtitleMenu();
-      gSubtitleMenu.render();
-
-      // select subtitle to match the default audio track
-      try {
-        const defaultAudioTrack = manifest.audioTracks.find(t => manifest.defaultMedia.indexOf(t.id) >= 0);
-        if (defaultAudioTrack) {
-          const bcp47 = defaultAudioTrack.bcp47;
-          let autoSubtitleId = gSubtitles.findIndex(t => (t.bcp47 === bcp47 && t.isCaption));
-          autoSubtitleId = (autoSubtitleId < 0) ? gSubtitles.findIndex(t => t.bcp47 === bcp47) : autoSubtitleId;
-          if (autoSubtitleId >= 0) {
-            console.log(`Subtitle "${bcp47}" auto-enabled to match audio`);
-            activateSubtitle(autoSubtitleId);
+        // select subtitle to match the default audio track
+        try {
+          const defaultAudioTrack = manifest.audioTracks.find(t => manifest.defaultMedia.indexOf(t.id) >= 0);
+          if (defaultAudioTrack) {
+            const bcp47 = defaultAudioTrack.bcp47;
+            let autoSubtitleId = gSubtitles.findIndex(t => (t.bcp47 === bcp47 && t.isCaption));
+            autoSubtitleId = (autoSubtitleId < 0) ? gSubtitles.findIndex(t => t.bcp47 === bcp47) : autoSubtitleId;
+            if (autoSubtitleId >= 0) {
+              console.log(`Subtitle "${bcp47}" auto-enabled to match audio`);
+              activateSubtitle(autoSubtitleId);
+            }
           }
         }
-      }
-      catch (err) {
-        console.error('Default audio track not found, ', err);
-      }
+        catch (err) {
+          console.error('Default audio track not found, ', err);
+        }
 
-      // retrieve video ratio
-      try {
-        let { width, height } = manifest.videoTracks[0].downloadables[0];
-        gRenderOptions.videoRatio = width / height;
-      }
-      catch (err) {
-        console.error('Video ratio not available, ', err);
+        // retrieve video ratio
+        try {
+          let { width, height } = manifest.videoTracks[0].downloadables[0];
+          gRenderOptions.videoRatio = width / height;
+        }
+        catch (err) {
+          console.error('Video ratio not available, ', err);
+        }
       }
     }
     catch (err) {
       console.error('Fatal: ', err);
+    }
+
+
+    if (gRendererLoop) {
+      // just for safety
+      gRendererLoop.stop();
+      gRendererLoop = null;
+      console.log('Terminated: old renderer loop');
+    }
+
+    if (!gRendererLoop) {
+      gRendererLoop = new RendererLoop();
+      gRendererLoop.start();
+      console.log('Started: renderer loop');
     }
   }
 }
