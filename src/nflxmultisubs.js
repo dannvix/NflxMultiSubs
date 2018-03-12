@@ -420,13 +420,16 @@ const buildSecondarySubtitleElement = (options) => {
 };
 
 
-// FIXME: refactor this function :-(
-
+// FIXME: refactor this class
 class RendererLoop {
   constructor() {
     this.isRunning = false;
-    this.lastScaledPrimaryTextContent; // reduce unnecessary work (quite dirty here)
-    this.isRenderDirty; // windows resize or config change, force re-render
+    this.lastScaledPrimaryTextContent = undefined; // reduce unnecessary work (quite dirty here)
+    this.isRenderDirty = undefined; // windows resize or config change, force re-render
+    this.videoElem = undefined;
+    this.controlsElem = undefined;
+    this.subtitleWrapperElem = undefined; // secondary subtitles wrapper (outer)
+    this.subSvg = undefined; // secondary subtitles container
   }
 
   setRenderDirty() {
@@ -443,66 +446,54 @@ class RendererLoop {
   }
 
   loop() {
-    const forceRender = !!this.isRenderDirty;
     try {
-      const videoElem = document.querySelector('#appMountPoint video');
-      if (videoElem) {
-        let controlsActive = false;
-        const controlsElem = document.querySelector('.controls');
-        if (controlsElem) {
-          if (!controlsElem.style.zIndex) {
-            // elevate the control bar's z-index
-            controlsElem.style.zIndex = 3;
-          }
-          if (controlsElem.classList.contains('active')) {
-            controlsActive = true;
+      do {
+        if (!this.videoElem || !this.videoElem.parentNode) {
+          this.videoElem = document.querySelector('#appMountPoint video');
+        }
+        if (!this.videoElem) {
+          // this script may be loaded while user's at the movie list page,
+          // thus if there's no video playing, we can end the renderer loop
+          if (!(/netflix\.com\/watch/i.test(window.location.href))) {
+            // disconnect with background to make our icon grayscale again
+            // FIXME: renderer loop shouldn't be responsible for this
+            gMsgPort && (gMsgPort.disconnect() && (gMsgPort = null));
+
+            this.stop();
+            break;
           }
         }
 
-        // install subtitle container
-        let subtitleWrapperElem;
-        const playerContainerElem = document.querySelector('.nf-player-container');
-        if (playerContainerElem) {
-          subtitleWrapperElem = playerContainerElem.querySelector('.nflxmultisubs-subtitle-wrapper');
-          if (!subtitleWrapperElem) {
-            subtitleWrapperElem = buildSecondarySubtitleElement(gRenderOptions);
-            playerContainerElem.appendChild(subtitleWrapperElem);
+        if (!this.controlsElem || this.controlsElem.parentNode) {
+          this.controlsElem = document.querySelector('.controls');
+          if (this.controlsElem && !this.controlsElem.style.zIndex) {
+            // elevate the navs' z-index (to be on top of our subtitles)
+            this.controlsElem.style.zIndex = 3;
           }
         }
-
-        // render & apply rendered elements
-        if (subtitleWrapperElem) {
-          const subSvg = subtitleWrapperElem.querySelector('svg');
-          if (subSvg) {
-            const seconds = videoElem.currentTime;
-            const sub = gSubtitles.find(sub => sub.active);
-            if (sub) {
-              if (sub instanceof TextSubtitle) {
-                const rect = videoElem.getBoundingClientRect();
-                sub.setExtent(rect.width, rect.height);
-              }
-
-              const renderedElems = sub.render(seconds, gRenderOptions, forceRender);
-              if (renderedElems) {
-                const [ extentWidth, extentHeight ] = sub.getExtent();
-                if (extentWidth && extentHeight) {
-                  subSvg.setAttribute('viewBox', `0 0 ${extentWidth} ${extentHeight}`);
-                }
-                [].forEach.call(subSvg.querySelectorAll('*'), elem => elem.parentNode.removeChild(elem));
-                renderedElems.forEach(elem => subSvg.appendChild(elem));
-              }
-            }
-          }
-          // FIXME: dirty transform & magic offets
-          // this leads to a big gap between primary & secondary subtitles
-          // when the progress bar is shown
-          subtitleWrapperElem.style.top = (controlsActive) ? '-100px' : '0';
+        const controlsActive = (this.controlsElem &&
+          this.controlsElem.classList.contains('active'));
+        if (controlsActive) {
+          this.setRenderDirty(); // to move up subttles
         }
 
-        // transform & scale the primary image-based subtitles
+        if (!this.subtitleWrapperElem || !this.subtitleWrapperElem.parentNode) {
+          const playerContainerElem = document.querySelector('.nf-player-container');
+          if (!playerContainerElem) break;
+          this.subtitleWrapperElem = buildSecondarySubtitleElement(gRenderOptions);
+          playerContainerElem.appendChild(this.subtitleWrapperElem);
+        }
+
+
+        // transform & scale primary subtitles
+        // ---------------------------------------------------------------------
+
+        // NOTE: we cannot put `primaryImageSubSvg` into instance state,
+        // because there are multiple instance of the SVG and they're switched
+        // when the langauge of primary subtitles is switched.
         const primaryImageSubSvg = document.querySelector('.image-based-timed-text svg');
         if (primaryImageSubSvg) {
-          let unscaledImgs = primaryImageSubSvg.querySelectorAll('image:not(.nflxmultisubs-scaled');
+          let unscaledImgs = primaryImageSubSvg.querySelectorAll('image:not(.nflxmultisubs-scaled)');
           if (unscaledImgs.length > 0) {
             const viewBox = primaryImageSubSvg.getAttributeNS(null, 'viewBox');
             const [ extentWidth, extentHeight ] = viewBox.split(' ').slice(-2).map(n => parseInt(n));
@@ -517,7 +508,6 @@ class RendererLoop {
 
             [].forEach.call(unscaledImgs, img => {
               img.classList.add('nflxmultisubs-scaled');
-
               const left = parseInt(img.getAttributeNS(null, 'x'));
               const top = parseInt(img.getAttributeNS(null, 'y'));
               const width = parseInt(img.getAttributeNS(null, 'width'));
@@ -525,7 +515,6 @@ class RendererLoop {
               const [ newWidth, newHeight ] = [ width * scale, height * scale ];
               const newLeft = (left + 0.5 * (width - newWidth));
               const newTop = (top <= centerLine) ? (topBaseline - newHeight) : (btmBaseline - newHeight);
-
               img.setAttributeNS(null, 'width', newWidth);
               img.setAttributeNS(null, 'height', newHeight);
               img.setAttributeNS(null, 'x', newLeft);
@@ -535,7 +524,6 @@ class RendererLoop {
           }
         }
 
-        // transform & scale the primary text-based subtitles
         const primaryTextSubDiv = document.querySelector('.player-timedtext');
         if (primaryTextSubDiv) (() => {
           let parentNode = primaryTextSubDiv.parentNode;
@@ -558,7 +546,7 @@ class RendererLoop {
           if (!container) return;
 
           const textContent = container.textContent;
-          if (this.lastScaledPrimaryTextContent === textContent) return;
+          if (this.lastScaledPrimaryTextContent === textContent && !this.isRenderDirty) return;
           this.lastScaledPrimaryTextContent = textContent;
 
           const style = parentNode.querySelector('style');
@@ -586,7 +574,12 @@ class RendererLoop {
           const btmBaseline = extentHeight * options.btmBaselinePos;
           const { left, top, width, height } = container.getBoundingClientRect();
           const newLeft = ((extentWidth * 0.5) - (width * 0.5));
-          const newTop = (btmBaseline - height);
+          let newTop = (btmBaseline - height);
+
+          // FIXME: dirty transform & magic offets
+          // we out run the official player, so the primary text-based subtitles
+          // does not move automatically when the navs are active
+          newTop += (controlsActive ? -120 : 0);
 
           style.textContent = styleText + '\n' + `
             .player-timedtext-text-container {
@@ -595,19 +588,39 @@ class RendererLoop {
             }`;
         })();
 
-        this.isRenderDirty = false;
-      }
-      else {
-        // <video> not found, check if we're in player pagg
-        const isInPlayerPage = /netflix\.com\/watch/i.test(window.location.href);
-        if (!isInPlayerPage) {
-          if (gMsgPort) {
-            gMsgPort.disconnect(); // disconnect with background to gray out our icon
-            gMsgPort = null;
-          }
-          this.stop();
+
+        // render secondary subtitles
+        // ---------------------------------------------------------------------
+        if (!this.subSvg || !this.subSvg.parentNode) {
+          this.subSvg = this.subtitleWrapperElem.querySelector('svg');
         }
-      }
+        const seconds = this.videoElem.currentTime;
+        const sub = gSubtitles.find(sub => sub.active);
+        if (sub) {
+          if (sub instanceof TextSubtitle) {
+            const rect = this.videoElem.getBoundingClientRect();
+            sub.setExtent(rect.width, rect.height);
+          }
+
+          const renderedElems = sub.render(seconds, gRenderOptions, !!this.isRenderDirty);
+          if (renderedElems) {
+            const [ extentWidth, extentHeight ] = sub.getExtent();
+            if (extentWidth && extentHeight) {
+              this.subSvg.setAttribute('viewBox', `0 0 ${extentWidth} ${extentHeight}`);
+            }
+            [].forEach.call(this.subSvg.querySelectorAll('*'), elem => elem.parentNode.removeChild(elem));
+            renderedElems.forEach(elem => this.subSvg.appendChild(elem));
+          }
+        }
+        // FIXME: dirty transform & magic offets
+        // this leads to a big gap between primary & secondary subtitles
+        // when the progress bar is shown
+        this.subtitleWrapperElem.style.top = (controlsActive) ? '-100px' : '0';
+
+        // everything rendered, clear the dirty bit with ease
+        this.isRenderDirty = false;
+      } while (0);
+
       this.isRunning && window.requestAnimationFrame(this.loop.bind(this));
     }
     catch (err) {
@@ -618,7 +631,7 @@ class RendererLoop {
 
 
 window.addEventListener('resize', (evt) => {
-  gRendererLoop && gRenderOptions.setRenderDirty();
+  gRendererLoop && gRendererLoop.setRenderDirty();
   console.log('Resize:',
     `${window.innerWidth}x${window.innerHeight} (${evt.timeStamp})`);
 });
@@ -632,7 +645,6 @@ class NflxMultiSubsManager {
     this.playerUrl = undefined;
     this.playerVersion = undefined;
   }
-
   updateManifest(manifest) {
     const isInPlayerPage = /netflix\.com\/watch/i.test(window.location.href);
     if (!isInPlayerPage) return;
