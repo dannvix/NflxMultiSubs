@@ -427,7 +427,6 @@ class RendererLoop {
     this.lastScaledPrimaryTextContent = undefined; // reduce unnecessary work (quite dirty here)
     this.isRenderDirty = undefined; // windows resize or config change, force re-render
     this.videoElem = undefined;
-    this.controlsElem = undefined;
     this.subtitleWrapperElem = undefined; // secondary subtitles wrapper (outer)
     this.subSvg = undefined; // secondary subtitles container
   }
@@ -464,15 +463,15 @@ class RendererLoop {
           }
         }
 
-        if (!this.controlsElem || this.controlsElem.parentNode) {
-          this.controlsElem = document.querySelector('.controls');
-          if (this.controlsElem && !this.controlsElem.style.zIndex) {
+        let controlsActive = false;
+        const controlsElem = document.querySelector('.controls');
+        if (controlsElem) {
+          if (!controlsElem.style.zIndex) {
             // elevate the navs' z-index (to be on top of our subtitles)
-            this.controlsElem.style.zIndex = 3;
+            controlsElem.style.zIndex = 3;
           }
+          controlsActive = controlsElem.classList.contains('active');
         }
-        const controlsActive = (this.controlsElem &&
-          this.controlsElem.classList.contains('active'));
 
         // NOTE: don't do this, the render rate is too high to shown the
         // image in SVG for secondary subtitles.... O_Q
