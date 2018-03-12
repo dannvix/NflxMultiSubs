@@ -473,9 +473,12 @@ class RendererLoop {
         }
         const controlsActive = (this.controlsElem &&
           this.controlsElem.classList.contains('active'));
-        if (controlsActive) {
-          this.setRenderDirty(); // to move up subttles
-        }
+
+        // NOTE: don't do this, the render rate is too high to shown the
+        // image in SVG for secondary subtitles.... O_Q
+        // if (controlsActive) {
+        //   this.setRenderDirty(); // to move up subttles
+        // }
 
         if (!this.subtitleWrapperElem || !this.subtitleWrapperElem.parentNode) {
           const playerContainerElem = document.querySelector('.nf-player-container');
