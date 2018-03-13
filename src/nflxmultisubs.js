@@ -419,6 +419,116 @@ const buildSecondarySubtitleElement = (options) => {
 };
 
 
+// -----------------------------------------------------------------------------
+
+
+class PrimaryImageTransformer {
+  constructor() {
+  }
+
+  transform(svgElem, controlsActive, forceRender) {
+    let unscaledImgs = svgElem.querySelectorAll('image:not(.nflxmultisubs-scaled)');
+    if (unscaledImgs.length > 0) {
+      const viewBox = svgElem.getAttributeNS(null, 'viewBox');
+      const [ extentWidth, extentHeight ] = viewBox.split(' ').slice(-2).map(n => parseInt(n));
+
+      // TODO: if there's no secondary subtitle, center the primary on baseline
+      const options = gRenderOptions;
+      const centerLine = extentHeight * options.centerLinePos;
+      const topBaseline = extentHeight * options.topBaselinePos;
+      const btmBaseline = extentHeight * options.btmBaselinePos;
+      const scale = options.primaryImageScale;
+      const opacity = options.primaryImageOpacity;
+
+      [].forEach.call(unscaledImgs, img => {
+        img.classList.add('nflxmultisubs-scaled');
+        const left = parseInt(img.getAttributeNS(null, 'x'));
+        const top = parseInt(img.getAttributeNS(null, 'y'));
+        const width = parseInt(img.getAttributeNS(null, 'width'));
+        const height = parseInt(img.getAttributeNS(null, 'height'));
+        const [ newWidth, newHeight ] = [ width * scale, height * scale ];
+        const newLeft = (left + 0.5 * (width - newWidth));
+        const newTop = (top <= centerLine) ? (topBaseline - newHeight) : (btmBaseline - newHeight);
+        img.setAttributeNS(null, 'width', newWidth);
+        img.setAttributeNS(null, 'height', newHeight);
+        img.setAttributeNS(null, 'x', newLeft);
+        img.setAttributeNS(null, 'y', newTop);
+        img.setAttributeNS(null, 'opacity', opacity);
+      });
+    }
+  }
+}
+
+
+class PrimaryTextTransformer {
+  constructor() {
+  }
+
+  transform(divElem, controlsActive) {
+    let parentNode = divElem.parentNode;
+    if (!parentNode.classList.contains('nflxmultisubs-primary-wrapper')) {
+      // let's use `<style>` + `!imporant` to outrun the offical player...
+      const wrapper = document.createElement('div');
+      wrapper.classList.add('nflxmultisubs-primary-wrapper');
+      wrapper.style = 'position:absolute; width:100%; height:100%; top:0; left:0;';
+
+      const styleElem = document.createElement('style');
+      wrapper.appendChild(styleElem);
+
+      // wrap the offical text-based subtitle container, hehe!
+      parentNode.insertBefore(wrapper, divElem);
+      wrapper.appendChild(divElem);
+      parentNode = wrapper;
+    }
+
+    const container = divElem.querySelector('.player-timedtext-text-container');
+    if (!container) return;
+
+    const textContent = container.textContent;
+    if (this.lastScaledPrimaryTextContent === textContent && !this.isRenderDirty) return;
+    this.lastScaledPrimaryTextContent = textContent;
+
+    const style = parentNode.querySelector('style');
+    if (!style) return;
+
+    const textSpan = container.querySelector('span');
+    if (!textSpan) return;
+
+    const fontSize = parseInt(textSpan.style.fontSize);
+    if (!fontSize) return;
+
+    const options = gRenderOptions;
+    const opacity = options.primaryTextOpacity;
+    const scale = options.primaryTextScale;
+    const newFontSize = (fontSize * scale);
+    const styleText = `.player-timedtext-text-container span {
+        font-size: ${newFontSize}px !important;
+        opacity: ${opacity};
+      }`;
+    style.textContent = styleText;
+
+    const rect = divElem.getBoundingClientRect();
+    const [ extentWidth, extentHeight ] = [ rect.width, rect.height ];
+
+    const btmBaseline = extentHeight * options.btmBaselinePos;
+    const { left, top, width, height } = container.getBoundingClientRect();
+    const newLeft = ((extentWidth * 0.5) - (width * 0.5));
+    let newTop = (btmBaseline - height);
+
+    // FIXME: dirty transform & magic offets
+    // we out run the official player, so the primary text-based subtitles
+    // does not move automatically when the navs are active
+    newTop += (controlsActive ? -120 : 0);
+
+    style.textContent = styleText + '\n' + `
+      .player-timedtext-text-container {
+        top: ${newTop}px !important;
+        left: ${newLeft}px !important;
+      }`;
+  }
+}
+
+
 // FIXME: refactor this class
 class RendererLoop {
   constructor() {
@@ -428,6 +538,8 @@ class RendererLoop {
     this.videoElem = undefined;
     this.subtitleWrapperElem = undefined; // secondary subtitles wrapper (outer)
     this.subSvg = undefined; // secondary subtitles container
+    this.primaryImageTransformer = new PrimaryImageTransformer();
+    this.primaryTextTransformer = new PrimaryTextTransformer();
   }
 
   setRenderDirty() {
@@ -494,100 +606,15 @@ class RendererLoop {
         // when the langauge of primary subtitles is switched.
         const primaryImageSubSvg = document.querySelector('.image-based-timed-text svg');
         if (primaryImageSubSvg) {
-          let unscaledImgs = primaryImageSubSvg.querySelectorAll('image:not(.nflxmultisubs-scaled)');
-          if (unscaledImgs.length > 0) {
-            const viewBox = primaryImageSubSvg.getAttributeNS(null, 'viewBox');
-            const [ extentWidth, extentHeight ] = viewBox.split(' ').slice(-2).map(n => parseInt(n));
-
-            // TODO: if there's no secondary subtitle, center the primary on baseline
-            const options = gRenderOptions;
-            const centerLine = extentHeight * options.centerLinePos;
-            const topBaseline = extentHeight * options.topBaselinePos;
-            const btmBaseline = extentHeight * options.btmBaselinePos;
-            const scale = options.primaryImageScale;
-            const opacity = options.primaryImageOpacity;
-
-            [].forEach.call(unscaledImgs, img => {
-              img.classList.add('nflxmultisubs-scaled');
-              const left = parseInt(img.getAttributeNS(null, 'x'));
-              const top = parseInt(img.getAttributeNS(null, 'y'));
-              const width = parseInt(img.getAttributeNS(null, 'width'));
-              const height = parseInt(img.getAttributeNS(null, 'height'));
-              const [ newWidth, newHeight ] = [ width * scale, height * scale ];
-              const newLeft = (left + 0.5 * (width - newWidth));
-              const newTop = (top <= centerLine) ? (topBaseline - newHeight) : (btmBaseline - newHeight);
-              img.setAttributeNS(null, 'width', newWidth);
-              img.setAttributeNS(null, 'height', newHeight);
-              img.setAttributeNS(null, 'x', newLeft);
-              img.setAttributeNS(null, 'y', newTop);
-              img.setAttributeNS(null, 'opacity', opacity);
-            });
-          }
+          this.primaryImageTransformer.transform(
+            primaryImageSubSvg, controlsActive, false);
         }
 
         const primaryTextSubDiv = document.querySelector('.player-timedtext');
-        if (primaryTextSubDiv) (() => {
-          let parentNode = primaryTextSubDiv.parentNode;
-          if (!parentNode.classList.contains('nflxmultisubs-primary-wrapper')) {
-            // let's use `<style>` + `!imporant` to outrun the offical player...
-            const wrapper = document.createElement('div');
-            wrapper.classList.add('nflxmultisubs-primary-wrapper');
-            wrapper.style = 'position:absolute; width:100%; height:100%; top:0; left:0;';
-
-            const styleElem = document.createElement('style');
-            wrapper.appendChild(styleElem);
-
-            // wrap the offical text-based subtitle container, hehe!
-            parentNode.insertBefore(wrapper, primaryTextSubDiv);
-            wrapper.appendChild(primaryTextSubDiv);
-            parentNode = wrapper;
-          }
-
-          const container = primaryTextSubDiv.querySelector('.player-timedtext-text-container');
-          if (!container) return;
-
-          const textContent = container.textContent;
-          if (this.lastScaledPrimaryTextContent === textContent && !this.isRenderDirty) return;
-          this.lastScaledPrimaryTextContent = textContent;
-
-          const style = parentNode.querySelector('style');
-          if (!style) return;
-
-          const textSpan = container.querySelector('span');
-          if (!textSpan) return;
-
-          const fontSize = parseInt(textSpan.style.fontSize);
-          if (!fontSize) return;
-
-          const options = gRenderOptions;
-          const opacity = options.primaryTextOpacity;
-          const scale = options.primaryTextScale;
-          const newFontSize = (fontSize * scale);
-          const styleText = `.player-timedtext-text-container span {
-              font-size: ${newFontSize}px !important;
-              opacity: ${opacity};
-            }`;
-          style.textContent = styleText;
-
-          const rect = primaryTextSubDiv.getBoundingClientRect();
-          const [ extentWidth, extentHeight ] = [ rect.width, rect.height ];
-
-          const btmBaseline = extentHeight * options.btmBaselinePos;
-          const { left, top, width, height } = container.getBoundingClientRect();
-          const newLeft = ((extentWidth * 0.5) - (width * 0.5));
-          let newTop = (btmBaseline - height);
-
-          // FIXME: dirty transform & magic offets
-          // we out run the official player, so the primary text-based subtitles
-          // does not move automatically when the navs are active
-          newTop += (controlsActive ? -120 : 0);
-
-          style.textContent = styleText + '\n' + `
-            .player-timedtext-text-container {
-              top: ${newTop}px !important;
-              left: ${newLeft}px !important;
-            }`;
-        })();
+        if (primaryTextSubDiv) {
+          this.primaryTextTransformer.transform(
+            primaryTextSubDiv, controlsActive, false);
+        }
 
 
         // render secondary subtitles
