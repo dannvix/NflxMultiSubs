@@ -14,11 +14,10 @@ const console = {
 // global states
 let gSubtitles = [], gSubtitleMenu;
 let gMsgPort, gRendererLoop;
+let gVideoRatio = (1080 / 1920);
 
 // TODO: sync this with configs coming from pop-up/options config UI
 let gRenderOptions = {
-  videoRatio: (1920 / 1080), // FIXME: this is not an option; it's a state
-
   centerLinePos: 0.5,
   topBaselinePos: 0.15,
   btmBaselinePos: 0.85,
@@ -404,7 +403,7 @@ const buildSecondarySubtitleElement = (options) => {
 
   const padding = document.createElement('div');
   padding.classList.add('nflxmultisubs-subtitle-padding');
-  padding.style = `display:block; content:' '; width:100%; padding-top:${(1/options.videoRatio)*100}%;`;
+  padding.style = `display:block; content:' '; width:100%; padding-top:${gVideoRatio*100}%;`;
 
   const container = document.createElement('div');
   container.classList.add('nflxmultisubs-subtitle-container');
@@ -713,7 +712,7 @@ class NflxMultiSubsManager {
         // retrieve video ratio
         try {
           let { width, height } = manifest.videoTracks[0].downloadables[0];
-          gRenderOptions.videoRatio = width / height;
+          gVideoRatio = height / width;
         }
         catch (err) {
           console.error('Video ratio not available, ', err);
