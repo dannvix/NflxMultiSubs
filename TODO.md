@@ -15,10 +15,8 @@ Bugfixes
 Features
 --------
 - [ ] 新增設定介面，在 pop-up 裡可以即時設整並預覽
-    - 目前在 `nflxmultisubs.js` 裡有留路了，參見 `gRenderOptions` 變數
-    - 第二字幕可用 `render(forced=true)` 來強迫重繪
-    - 但主字幕因為是用相對比例方式調整位置與大小，所以強迫重繪前要先記錄下原始數值
-    - 本來想用 `chrome.storage.sync()` 來存設定值，但考慮到使用者不同裝置可能需要不同設定，所以還是存在 local 就好
+    - 透過 message port 改 `gRenderOptions` 然後呼叫 `gRendererLoop.setRenderDirty()` 強迫重繪即可即時預覽
+    - 考慮到使用者的不同裝置可能需要不同設定，建議使用 `chrome.storage.local` 而非一般推薦的 `chrome.storage.sync` 來存放設定值
 
 - [ ] 移植至 Firefox
     - 同為 WebExtension 架構，整體差異不大

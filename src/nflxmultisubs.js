@@ -427,8 +427,9 @@ class PrimaryImageTransformer {
   }
 
   transform(svgElem, controlsActive, forceRender) {
-    let unscaledImgs = svgElem.querySelectorAll('image:not(.nflxmultisubs-scaled)');
-    if (unscaledImgs.length > 0) {
+    const selector = forceRender ? 'image' : 'image:not(.nflxmultisubs-scaled)';
+    const images = svgElem.querySelectorAll(selector);
+    if (images.length > 0) {
       const viewBox = svgElem.getAttributeNS(null, 'viewBox');
       const [ extentWidth, extentHeight ] = viewBox.split(' ').slice(-2).map(n => parseInt(n));
 
@@ -440,12 +441,21 @@ class PrimaryImageTransformer {
       const scale = options.primaryImageScale;
       const opacity = options.primaryImageOpacity;
 
-      [].forEach.call(unscaledImgs, img => {
+      [].forEach.call(images, img => {
         img.classList.add('nflxmultisubs-scaled');
-        const left = parseInt(img.getAttributeNS(null, 'x'));
-        const top = parseInt(img.getAttributeNS(null, 'y'));
-        const width = parseInt(img.getAttributeNS(null, 'width'));
-        const height = parseInt(img.getAttributeNS(null, 'height'));
+        const left = parseInt(img.getAttributeNS(null, 'data-orig-x') || img.getAttributeNS(null, 'x'));
+        const top = parseInt(img.getAttributeNS(null, 'data-orig-y') || img.getAttributeNS(null, 'y'));
+        const width = parseInt(img.getAttributeNS(null, 'data-orig-width') || img.getAttributeNS(null, 'width'));
+        const height = parseInt(img.getAttributeNS(null, 'data-orig-height') || img.getAttributeNS(null, 'height'));
+
+        const attribs = [['x', left], ['y', top], ['width', width], ['height', height]];
+        attribs.forEach(p => {
+          const attrName = `data-orig-${p[0]}`, attrValue = p[1];
+          if (!img.getAttributeNS(null, attrName)) {
+            img.setAttributeNS(null, attrName, attrValue);
+          }
+        });
+
         const [ newWidth, newHeight ] = [ width * scale, height * scale ];
         const newLeft = (left + 0.5 * (width - newWidth));
         const newTop = (top <= centerLine) ? (topBaseline - newHeight) : (btmBaseline - newHeight);
@@ -462,9 +472,10 @@ class PrimaryImageTransformer {
 
 class PrimaryTextTransformer {
   constructor() {
+    this.lastScaledPrimaryTextContent = undefined;
   }
 
-  transform(divElem, controlsActive) {
+  transform(divElem, controlsActive, forceRender) {
     let parentNode = divElem.parentNode;
     if (!parentNode.classList.contains('nflxmultisubs-primary-wrapper')) {
       // let's use `<style>` + `!imporant` to outrun the offical player...
@@ -485,7 +496,7 @@ class PrimaryTextTransformer {
     if (!container) return;
 
     const textContent = container.textContent;
-    if (this.lastScaledPrimaryTextContent === textContent && !this.isRenderDirty) return;
+    if (this.lastScaledPrimaryTextContent === textContent && !forceRender) return;
     this.lastScaledPrimaryTextContent = textContent;
 
     const style = parentNode.querySelector('style');
@@ -533,7 +544,6 @@ class PrimaryTextTransformer {
 class RendererLoop {
   constructor() {
     this.isRunning = false;
-    this.lastScaledPrimaryTextContent = undefined; // reduce unnecessary work (quite dirty here)
     this.isRenderDirty = undefined; // windows resize or config change, force re-render
     this.videoElem = undefined;
     this.subtitleWrapperElem = undefined; // secondary subtitles wrapper (outer)
@@ -600,20 +610,19 @@ class RendererLoop {
 
         // transform & scale primary subtitles
         // ---------------------------------------------------------------------
-
         // NOTE: we cannot put `primaryImageSubSvg` into instance state,
         // because there are multiple instance of the SVG and they're switched
         // when the langauge of primary subtitles is switched.
         const primaryImageSubSvg = document.querySelector('.image-based-timed-text svg');
         if (primaryImageSubSvg) {
           this.primaryImageTransformer.transform(
-            primaryImageSubSvg, controlsActive, false);
+            primaryImageSubSvg, controlsActive, !!this.isRenderDirty);
         }
 
         const primaryTextSubDiv = document.querySelector('.player-timedtext');
         if (primaryTextSubDiv) {
           this.primaryTextTransformer.transform(
-            primaryTextSubDiv, controlsActive, false);
+            primaryTextSubDiv, controlsActive, !!this.isRenderDirty);
         }
 
 
