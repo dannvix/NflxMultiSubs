@@ -320,9 +320,9 @@ class SubtitleMenu {
       </svg></span>`;
 
     const loadingIcon = `<span class="video-controls-check">
-      <svg class="svg-icon svg-icon-nfplayerCheck" focusable="false" viewBox="0 0 50 50">
-          <path d="M 0 21 C10 56, 40 56, 50 21 L 45 19 C40 41, 10 41, 10 19" stroke="transparent" fill="hsl(15,100%,50%)">
-            <animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.5s" repeatCount="indefinite"/>
+      <svg class="svg-icon svg-icon-nfplayerCheck" focusable="false" viewBox="0 -5 50 55">
+          <path d="M 6 25 C6 21, 0 21, 0 25 C0 57, 49 59, 50 25 C50 50, 8 55, 6 25" stroke="transparent" fill="red">
+            <animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.9s" repeatCount="indefinite"/>
           </path>
       </svg></span>`;
 
