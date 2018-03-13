@@ -30,7 +30,6 @@ const buildManifest = (() => {
   const manifestOutPath = path.join(kBuildDir, 'manifest.json');
   const m = JSON.parse(fs.readFileSync(manifestInPath), 'utf-8');
   fs.writeFileSync(manifestOutPath, JSON.stringify({
-    name: process.env.npm_package_name,
     short_name: process.env.npm_package_name,
     description: process.env.npm_package_description,
     version: process.env.npm_package_version,
