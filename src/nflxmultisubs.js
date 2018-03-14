@@ -16,8 +16,8 @@ let gSubtitles = [], gSubtitleMenu;
 let gMsgPort, gRendererLoop;
 let gVideoRatio = (1080 / 1920);
 
-// TODO: sync this with configs coming from pop-up/options config UI
-let gRenderOptions = {
+// FIXME: dedup default settings with background script
+const kDefaultSettings = {
   centerLinePos: 0.5,
   topBaselinePos: 0.15,
   btmBaselinePos: 0.85,
@@ -31,6 +31,7 @@ let gRenderOptions = {
   secondaryTextStroke: 2.0,
   secondaryTextOpacity: 0.85,
 };
+let gRenderOptions = Object.assign({}, kDefaultSettings);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -426,8 +427,8 @@ class PrimaryImageTransformer {
   constructor() {
   }
 
-  transform(svgElem, controlsActive, forceRender) {
-    const selector = forceRender ? 'image' : 'image:not(.nflxmultisubs-scaled)';
+  transform(svgElem, controlsActive, forced) {
+    const selector = forced ? 'image' : 'image:not(.nflxmultisubs-scaled)';
     const images = svgElem.querySelectorAll(selector);
     if (images.length > 0) {
       const viewBox = svgElem.getAttributeNS(null, 'viewBox');
@@ -475,7 +476,7 @@ class PrimaryTextTransformer {
     this.lastScaledPrimaryTextContent = undefined;
   }
 
-  transform(divElem, controlsActive, forceRender) {
+  transform(divElem, controlsActive, forced) {
     let parentNode = divElem.parentNode;
     if (!parentNode.classList.contains('nflxmultisubs-primary-wrapper')) {
       // let's use `<style>` + `!imporant` to outrun the offical player...
@@ -496,7 +497,7 @@ class PrimaryTextTransformer {
     if (!container) return;
 
     const textContent = container.textContent;
-    if (this.lastScaledPrimaryTextContent === textContent && !forceRender) return;
+    if (this.lastScaledPrimaryTextContent === textContent && !forced) return;
     this.lastScaledPrimaryTextContent = textContent;
 
     const style = parentNode.querySelector('style');
@@ -695,6 +696,13 @@ class NflxMultiSubsManager {
         const extensionId = window.__nflxMultiSubsExtId;
         gMsgPort = chrome.runtime.connect(extensionId);
         console.log(`Linked: ${extensionId}`);
+
+        gMsgPort.onMessage.addListener((msg) => {
+          if (msg.settings) {
+            gRenderOptions = Object.assign({}, msg.settings);
+            gRendererLoop && gRendererLoop.setRenderDirty();
+          }
+        });
       }
       catch (err) {
         console.warn('Error: cannot talk to background,', err);

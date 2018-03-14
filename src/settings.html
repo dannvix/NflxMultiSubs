@@ -2,97 +2,99 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <style>
-    html, body {
-      background: hsl(0, 0%, 97%);
-      font-size: 10pt;
-      font-family: "Helvetica Neue",Arial,sans-serif;
-      margin: 0;
-      min-width: 400px;
-      min-height: 200px;
-      padding: 0;
-      outline: 0;
-    }
-
-    .wrapper {
-      align-items: stretch;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      min-height: 200px;
-      text-align: center;
-    }
-
-    img {
-      height: 2em;
-      margin: 0 auto;
-    }
-
-    hr {
-      display: block;
-      height: 1px;
-      border: 0;
-      border-top: 1px solid hsl(0, 0%, 87%);
-      border-bottom: 1px solid white;
-      margin: .8em 0;
-      padding: 0; 
-    }
-
-    h1, h3 {
-      color: #db3b26;
-      margin: .2em 0;
-      padding: 0;
-      text-transform: uppercase;
-    }
-
-    h1 {
-      font-size: 2em;
-    }
-
-    h3 {
-      font-size: 1.25em;
-    }
-
-    a {
-      color: hsl(210, 70%, 38%);
-      font-weight: bold;
-      outline: 0;
-      transition: color .5s;
-      text-decoration: none;
-    }
-
-    a:hover{
-      color: hsl(210, 100%, 60%);
-      text-decoration: underline;
-    }
-
-    header {
-      color: hsl(0, 0%, 25%);
-      font-size: 2em;
-      font-weight: bolder;
-      margin-top: .8em;
-    }
-
-    footer {
-      color: hsl(0, 0%, 50%);
-      margin-bottom: .8em;
-    }
-  </style>
+  <link rel="stylesheet" type="text/css" href="settings.css">
+  <script type="text/javascript" src="settings.min.js"></script>
 </head>
 <body>
   <div class="wrapper">
-    <header>
-      <img src="icon.png"/>
-    </header>
+    <section class="settings-layout">
+      <h2>Layout</h2>
+      <div data-id="0">
+        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 160 100">
+          <rect x="5" y="5" width="150" height="90" rx="12" ry="12" fill="transparent" stroke="hsl(0, 0%, 80%)" stroke-width="6"/>
+          <line x1="40" y1="66" x2="120" y2="66" stroke="hsl(0, 0%, 30%)" stroke-width="4"/>
+          <line x1="40" y1="72" x2="120" y2="72" stroke="hsl(0, 0%, 30%)" stroke-width="4"/>
+        </svg>
+        <p>Compact</p>
+      </div>
+      <div data-id="1">
+        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 160 100">
+          <rect x="5" y="5" width="150" height="90" rx="12" ry="12" fill="transparent" stroke="hsl(0, 0%, 80%)" stroke-width="6"/>
+          <line x1="40" y1="72" x2="120" y2="72" stroke="hsl(0, 0%, 30%)" stroke-width="4"/>
+          <line x1="40" y1="78" x2="120" y2="78" stroke="hsl(0, 0%, 30%)" stroke-width="4"/>
+        </svg>
+        <p>Moderate</p>
+      </div>
+      <div data-id="2">
+        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 160 100">
+          <rect x="5" y="5" width="150" height="90" rx="12" ry="12" fill="transparent" stroke="hsl(0, 0%, 80%)" stroke-width="6"/>
+          <line x1="40" y1="80" x2="120" y2="80" stroke="hsl(0, 0%, 30%)" stroke-width="4"/>
+          <line x1="40" y1="86" x2="120" y2="86" stroke="hsl(0, 0%, 30%)" stroke-width="4"/>
+        </svg>
+        <p>Ease</p>
+      </div>
+    </section>
+
+    <section class="settings-primary-font-size">
+      <h2>Font Size — Primary</h2>
+      <div class="font-size-list">
+        <div data-id="0" class="font-size font-size-xs">字</div>
+        <div data-id="1" class="font-size font-size-s">字</div>
+        <div data-id="2" class="font-size font-size-m">字</div>
+        <div data-id="3" class="font-size font-size-l">字</div>
+        <div data-id="4" class="font-size font-size-xl">字</div>
+      </div>
+    </section>
+
+    <section class="settings-secondary-font-size">
+      <h2>Font Size — Secondary</h2>
+      <div class="font-size-list">
+        <div data-id="0" class="font-size font-size-xs">A</div>
+        <div data-id="1" class="font-size font-size-s">A</div>
+        <div data-id="2" class="font-size font-size-m">A</div>
+        <div data-id="3" class="font-size font-size-l">A</div>
+        <div data-id="4" class="font-size font-size-xl">A</div>
+      </div>
+    </section>
+
+    <section class="settings-secondary-lang">
+      <h2>Secondary Language</h2>
+      <div id="secondary-lang-off">
+        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 160 100">
+          <rect x="5" y="5" width="150" height="90" rx="12" ry="12" fill="transparent" stroke="hsl(0, 0%, 80%)" stroke-width="6"/>
+          <line x1="40" y1="72" x2="120" y2="72" stroke="hsl(0, 0%, 30%)" stroke-width="4"/>
+        </svg>
+        <p>Disabled</p>
+      </div>
+      <div id="secondary-lang-smart">
+        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 160 100">
+          <rect x="5" y="5" width="150" height="90" rx="12" ry="12" fill="transparent" stroke="hsl(0, 0%, 80%)" stroke-width="6"/>
+          <line x1="40" y1="72" x2="120" y2="72" stroke="hsl(0, 0%, 30%)" stroke-width="4"/>
+          <line x1="40" y1="78" x2="120" y2="78" stroke="hsl(0, 0%, 30%)" stroke-width="4"/>
+        </svg>
+        <p>Smart</p>
+      </div>
+      <div id="secondary-lang-remembered">
+        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 160 100">
+          <rect x="5" y="5" width="150" height="90" rx="12" ry="12" fill="transparent" stroke="hsl(0, 0%, 80%)" stroke-width="6"/>
+          <line x1="40" y1="72" x2="120" y2="72" stroke="hsl(0, 0%, 30%)" stroke-width="4"/>
+          <line x1="40" y1="78" x2="120" y2="78" stroke="hsl(0, 0%, 30%)" stroke-width="4"/>
+        </svg>
+        <p>Last Used</p>
+      </div>
+    </section>
+
     <hr/>
-    <h1>字幕設定．近期上線</h1>
-    <h3>Settings coming soon</h3>
+    <div>
+      <a id="btnReset" tabIndex="-1">Reset to Default</a>
+      &nbsp;|&nbsp;
+      <a class="pro-link" tabIndex="-1">Pro Mode</a>
+    </div>
     <hr/>
+
     <footer>
-      查看原始碼、回報問題請至&nbsp;<a target="_blank" href="https://github.com/dannvix/NflxMultiSubs">GitHub</a>&nbsp;專案頁面
+      Give us a ★ on <a target="_blank" href="https://github.com/dannvix/NflxMultiSubs">GitHub</a>
     </footer>
   </div>
-
-  <script type="text/javascript" src="settings.min.js"></script>
 </body>
 </html>

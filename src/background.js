@@ -11,15 +11,38 @@ chrome.webRequest.onBeforeRequest.addListener(details => {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// TODO: dispatch configs to injected agent on Netflix player page (realtime preview)
-chrome.runtime.onConnectExternal.addListener(port => {
-  let tabId;
-  if (port.sender && port.sender.tab) {
-    tabId = port.sender.tab.id;
-  }
-  console.log(`Connected: ${tabId} (tab)`);
 
-  // saturate our icon
+const kDefaultSettings = {
+  centerLinePos: 0.5,
+  topBaselinePos: 0.15,
+  btmBaselinePos: 0.85,
+  primaryImageScale: 0.75,
+  primaryImageOpacity: 0.85,
+  primaryTextScale: 0.95,
+  primaryTextOpacity: 0.85,
+  secondaryImageScale: 0.5,
+  secondaryImageOpacity: 0.85,
+  secondaryTextScale: 1.0,
+  secondaryTextStroke: 2.0,
+  secondaryTextOpacity: 0.85,
+};
+
+let gSettings = Object.assign({}, kDefaultSettings);
+
+chrome.storage.local.get(['settings'], (result) => {
+  console.dir('Loaded: settings=', result.settings);
+  gSettings = result.settings || gSettings;
+});
+
+function saveSettings() {
+  chrome.storage.local.set({ settings: gSettings }, () => {
+    console.log('Settings: saved into local storage');
+  });
+}
+
+// ----------------------------------------------------------------------------
+
+function saturateActionIconForTab(tabId) {
   chrome.browserAction.setIcon({
     tabId: tabId,
     path: {
@@ -27,28 +50,86 @@ chrome.runtime.onConnectExternal.addListener(port => {
       '32': 'icon32.png',
     },
   });
+}
+
+function desaturateActionIconForTab(tabId) {
+  chrome.browserAction.setIcon({
+    tabId: tabId,
+    path: {
+      '16': 'icon16-gray.png',
+      '32': 'icon32-gray.png',
+    },
+  });
+}
+
+// -----------------------------------------------------------------------------
+
+let gExtPorts = {}; // tabId -> msgPort; for config dispatching
+function dispatchSettings() {
+  const keys = Object.keys(gExtPorts);
+  keys.map(k => gExtPorts[k]).forEach(port => {
+    try {
+      port.postMessage({ settings: gSettings });
+    }
+    catch (err) {
+      console.error('Error: cannot dispatch settings,', err);
+    }
+  });
+}
+
+chrome.runtime.onConnectExternal.addListener(port => {
+  const tabId = port.sender && port.sender.tab && port.sender.tab.id;
+
+  gExtPorts[tabId] = port;
+  saturateActionIconForTab(tabId);
+  console.log(`Connected: ${tabId} (tab)`);
+
+  port.postMessage({ settings: gSettings });
 
   port.onDisconnect.addListener(() => {
+    delete gExtPorts[tabId];
+    desaturateActionIconForTab(tabId);
     console.log(`Disconnected: ${tabId} (tab)`);
-
-    // reset the icon to grayscale
-    chrome.browserAction.setIcon({
-      tabId: tabId,
-      path: {
-        '16': 'icon16-gray.png',
-        '32': 'icon32-gray.png',
-      },
-    });
   });
 });
 
 
 // -----------------------------------------------------------------------------
 
-// TODO: receive configs from our pop-up/options page (realtime preview)
+// return true if valid; otherwise return false
+function validateSettings(settings) {
+  return true; // TODO
+}
+
+
 chrome.runtime.onConnect.addListener(port => {
   const portName = port.name;
   console.log(`Connected: ${portName} (internal)`);
+
+  if (portName === 'settings') {
+    port.postMessage({ settings: gSettings });
+
+    port.onMessage.addListener(msg => {
+      console.dir('Received: settings=', msg.settings);
+      if (!msg.settings) {
+        gSettings = Object.assign({}, kDefaultSettings);
+        port.postMessage({ settings: gSettings });
+      }
+      else {
+        let settings = Object.assign({}, gSettings);
+        settings = Object.assign(settings, msg.settings);
+        if (!validateSettings(settings)) {
+          gSettings = Object.assign({}, kDefaultSettings);
+          port.postMessage({ settings: gSettings });
+        }
+        else {
+          gSettings = settings;
+        }
+      }
+      saveSettings();
+      dispatchSettings();
+    });
+  }
 
   port.onDisconnect.addListener(() => {
     console.log(`Disconnected: ${portName} (internal)`);

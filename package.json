@@ -2,7 +2,7 @@
   "name": "NflxMultiSubs",
   "description": "Bilingual Subtitles & Enhanced Experiences for Netflix",
   "author": "Dan Chen",
-  "version": "1.5.4",
+  "version": "1.6.0",
   "license": "MIT",
   "private": true,
   "scripts": {

@@ -68,7 +68,7 @@ const copyJsZip = (() => {
 console.log('Copying assets ...');
 fs.readdirSync(kExtSrcDir).forEach(basename => {
   const p = path.parse(basename);
-  if (!['.html', '.png'].some(n => p.ext.toLowerCase() === n)) return;
+  if (!['.html', '.png', '.css'].some(n => p.ext.toLowerCase() === n)) return;
 
   const srcPath = path.join(kExtSrcDir, basename);
   const dstPath = path.join(kBuildDir, basename);

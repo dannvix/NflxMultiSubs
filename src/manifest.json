@@ -22,11 +22,6 @@
     "default_popup": "settings.html"
   },
 
-  "options_ui": {
-    "page": "settings.html",
-    "chrome_style": true
-  },
-
   "icons": {
     "16": "icon16.png",
     "32": "icon32.png",
