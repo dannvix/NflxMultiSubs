@@ -10,16 +10,16 @@ port.onMessage.addListener((msg) => {
 
 const layoutPresets = [
   { // compact
-    topBaselinePos: 0.20,
-    btmBaselinePos: 0.80,
+    upperBaselinePos: 0.20,
+    lowerBaselinePos: 0.80,
   },
   { // moderate (default)
-    topBaselinePos: 0.15,
-    btmBaselinePos: 0.85,
+    upperBaselinePos: 0.15,
+    lowerBaselinePos: 0.85,
   },
   { // ease
-    topBaselinePos: 0.10,
-    btmBaselinePos: 0.90,
+    upperBaselinePos: 0.10,
+    lowerBaselinePos: 0.90,
   },
 ];
 
@@ -89,7 +89,7 @@ function renderActiveSettings() {
   let elem;
 
   // layout
-  const layoutId = layoutPresets.findIndex(k => (k.btmBaselinePos === settings.btmBaselinePos));
+  const layoutId = layoutPresets.findIndex(k => (k.lowerBaselinePos === settings.lowerBaselinePos));
   if (layoutId !== -1) {
     elem = document.querySelector(`.settings-layout > div[data-id="${layoutId}"]`);
     elem && elem.classList.add('active');

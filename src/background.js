@@ -13,9 +13,8 @@ chrome.webRequest.onBeforeRequest.addListener(details => {
 
 
 const kDefaultSettings = {
-  centerLinePos: 0.5,
-  topBaselinePos: 0.15,
-  btmBaselinePos: 0.85,
+  upperBaselinePos: 0.15,
+  lowerBaselinePos: 0.85,
   primaryImageScale: 0.75,
   primaryImageOpacity: 0.85,
   primaryTextScale: 0.95,
@@ -29,9 +28,19 @@ const kDefaultSettings = {
 
 let gSettings = Object.assign({}, kDefaultSettings);
 
+// return true if valid; otherwise return false
+function validateSettings(settings) {
+  const keys = Object.keys(kDefaultSettings);
+  return keys.every(key => (key in settings));
+}
+
+
 chrome.storage.local.get(['settings'], (result) => {
-  console.dir('Loaded: settings=', result.settings);
-  gSettings = result.settings || gSettings;
+  console.log('Loaded: settings=', result.settings);
+  if (result.settings && validateSettings(result.settings))
+    gSettings = result.settings;
+  else
+    saveSettings();
 });
 
 function saveSettings() {
@@ -96,11 +105,6 @@ chrome.runtime.onConnectExternal.addListener(port => {
 
 // -----------------------------------------------------------------------------
 
-// return true if valid; otherwise return false
-function validateSettings(settings) {
-  return true; // TODO
-}
-
 
 chrome.runtime.onConnect.addListener(port => {
   const portName = port.name;
@@ -110,7 +114,7 @@ chrome.runtime.onConnect.addListener(port => {
     port.postMessage({ settings: gSettings });
 
     port.onMessage.addListener(msg => {
-      console.dir('Received: settings=', msg.settings);
+      console.log('Received: settings=', msg.settings);
       if (!msg.settings) {
         gSettings = Object.assign({}, kDefaultSettings);
         port.postMessage({ settings: gSettings });

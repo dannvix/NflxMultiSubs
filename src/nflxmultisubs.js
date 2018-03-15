@@ -18,9 +18,8 @@ let gVideoRatio = (1080 / 1920);
 
 // FIXME: dedup default settings with background script
 const kDefaultSettings = {
-  centerLinePos: 0.5,
-  topBaselinePos: 0.15,
-  btmBaselinePos: 0.85,
+  upperBaselinePos: 0.15,
+  lowerBaselinePos: 0.85,
   primaryImageScale: 0.75,
   primaryImageOpacity: 0.85,
   primaryTextScale: 0.95,
@@ -224,16 +223,16 @@ class ImageSubtitle extends SubtitleBase {
 
   _render(lines, options) {
     const scale = options.secondaryImageScale;
-    const centerLine = this.extentHeight * options.centerLinePos;
-    const topBaseline = this.extentHeight * options.topBaselinePos;
-    const btmBaseline = this.extentHeight * options.btmBaselinePos;
+    const centerLine = this.extentHeight * 0.5;
+    const upperBaseline = this.extentHeight * options.upperBaselinePos;
+    const lowerBaseline = this.extentHeight * options.lowerBaselinePos;
     return lines.map(line => {
       const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
       this.zip.file(line.imageName).async('blob').then(blob => {
         const { left, top, width, height } = line;
         const [ newWidth, newHeight ] = [ width * scale, height * scale ];
         const newLeft = (left + 0.5 * (width - newWidth));
-        const newTop = (top <= centerLine) ? (topBaseline) : (btmBaseline);
+        const newTop = (top <= centerLine) ? (upperBaseline) : (lowerBaseline);
 
         const src = URL.createObjectURL(blob);
         img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', src);
@@ -436,9 +435,9 @@ class PrimaryImageTransformer {
 
       // TODO: if there's no secondary subtitle, center the primary on baseline
       const options = gRenderOptions;
-      const centerLine = extentHeight * options.centerLinePos;
-      const topBaseline = extentHeight * options.topBaselinePos;
-      const btmBaseline = extentHeight * options.btmBaselinePos;
+      const centerLine = extentHeight * 0.5;
+      const upperBaseline = extentHeight * options.upperBaselinePos;
+      const lowerBaseline = extentHeight * options.lowerBaselinePos;
       const scale = options.primaryImageScale;
       const opacity = options.primaryImageOpacity;
 
@@ -459,7 +458,7 @@ class PrimaryImageTransformer {
 
         const [ newWidth, newHeight ] = [ width * scale, height * scale ];
         const newLeft = (left + 0.5 * (width - newWidth));
-        const newTop = (top <= centerLine) ? (topBaseline - newHeight) : (btmBaseline - newHeight);
+        const newTop = (top <= centerLine) ? (upperBaseline - newHeight) : (lowerBaseline - newHeight);
         img.setAttributeNS(null, 'width', newWidth);
         img.setAttributeNS(null, 'height', newHeight);
         img.setAttributeNS(null, 'x', newLeft);
