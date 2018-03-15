@@ -13,6 +13,7 @@ Best ever Chrome extension to unleash bilingual subtitles on Netflix!
 - 整合原生 Netflix 選單，不需離開播放介面即可切換語言
 - Netflix 有提供的字幕通通可以選，不需要另外找字幕組
 - 順便啟用了 1080p 高畫質播放 :)
+- 也順便做了調整播放速度的功能（按 `[` 與 `]` 鍵）
 - 開放原始碼！
 
 
