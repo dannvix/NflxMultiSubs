@@ -25,47 +25,47 @@ const layoutPresets = [
 
 const primarySizePresets = [
   { // x-small
-    primaryImageScale: 0.65,
-    primaryTextScale: 0.85,
+    primaryImageScale: 0.55,
+    primaryTextScale: 0.75,
   },
   { // small
-    primaryImageScale: 0.70,
-    primaryTextScale: 0.90,
+    primaryImageScale: 0.65,
+    primaryTextScale: 0.85,
   },
   { // medium (default)
     primaryImageScale: 0.75,
     primaryTextScale: 0.95,
   },
   { // large
-    primaryImageScale: 0.80,
-    primaryTextScale: 1.00,
-  },
-  { // x-large
     primaryImageScale: 0.85,
     primaryTextScale: 1.05,
+  },
+  { // x-large
+    primaryImageScale: 0.95,
+    primaryTextScale: 1.10,
   },
 ];
 
 const secondarySizePresets = [
   { // x-small
-    secondaryImageScale: 0.4,
-    secondaryTextScale: 0.9,
+    secondaryImageScale: 0.35,
+    secondaryTextScale: 0.85,
   },
   { // small
-    secondaryImageScale: 0.45,
-    secondaryTextScale: 0.95,
+    secondaryImageScale: 0.42,
+    secondaryTextScale: 0.92,
   },
   { // medium (default)
     secondaryImageScale: 0.50,
     secondaryTextScale: 1.00,
   },
   { // large
-    secondaryImageScale: 0.55,
-    secondaryTextScale: 1.05,
-  },
-  { // x-large
     secondaryImageScale: 0.60,
     secondaryTextScale: 1.10,
+  },
+  { // x-large
+    secondaryImageScale: 0.70,
+    secondaryTextScale: 1.20,
   },
 ];
 
