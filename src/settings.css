@@ -9,6 +9,7 @@ html, body {
   min-height: 500px;
   padding: 0;
   outline: 0;
+  user-select: none;
 }
 
 .wrapper {
