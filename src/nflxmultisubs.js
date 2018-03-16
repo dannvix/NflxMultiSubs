@@ -158,7 +158,7 @@ class TextSubtitle extends SubtitleBase {
     text.setAttributeNS(null, 'stroke', 'black');
     text.setAttributeNS(null, 'stroke-width', `${1.0 * options.secondaryTextStroke}px`);
     text.setAttributeNS(null, 'x', this.extentWidth * 0.5);
-    text.setAttributeNS(null, 'y', this.extentHeight * (options.btmBaselinePos + 0.01));
+    text.setAttributeNS(null, 'y', this.extentHeight * (options.lowerBaselinePos + 0.01));
     text.setAttributeNS(null, 'opacity', options.secondaryTextOpacity);
     text.style.fontSize = `${fontSize * options.secondaryTextScale}px`;
     text.style.fontFamily = 'Arial, Helvetica';
@@ -521,10 +521,10 @@ class PrimaryTextTransformer {
     const rect = divElem.getBoundingClientRect();
     const [ extentWidth, extentHeight ] = [ rect.width, rect.height ];
 
-    const btmBaseline = extentHeight * options.btmBaselinePos;
+    const lowerBaseline = extentHeight * options.lowerBaselinePos;
     const { left, top, width, height } = container.getBoundingClientRect();
     const newLeft = ((extentWidth * 0.5) - (width * 0.5));
-    let newTop = (btmBaseline - height);
+    let newTop = (lowerBaseline - height);
 
     // FIXME: dirty transform & magic offets
     // we out run the official player, so the primary text-based subtitles
