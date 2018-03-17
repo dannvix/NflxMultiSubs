@@ -32,7 +32,7 @@
   "content_scripts": [
     {
       "matches": ["https://www.netflix.com/*"],
-      "js": ["acorn.min.js", "content.min.js"],
+      "js": ["content.min.js"],
       "run_at": "document_start"
     }
   ],
@@ -42,7 +42,6 @@
   },
 
   "web_accessible_resources": [
-    "jszip.min.js",
     "nflxmultisubs.min.js"
   ]
 }

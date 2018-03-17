@@ -9,12 +9,12 @@
     "build": "node utils/build.js",
     "pack": "node utils/pack.js"
   },
-  "dependencies": {
-    "acorn": "*",
-    "jszip": "*"
-  },
   "devDependencies": {
-    "babel-minify": "*",
-    "fs-extra": "*"
+    "acorn": "^5.5.3",
+    "clean-webpack-plugin": "^0.1.19",
+    "copy-webpack-plugin": "^4.5.1",
+    "fs-extra": "^5.0.0",
+    "jszip": "^3.1.5",
+    "webpack": "^4.1.1"
   }
 }

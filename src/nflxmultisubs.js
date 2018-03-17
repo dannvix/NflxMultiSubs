@@ -1,3 +1,5 @@
+const JSZip = require('jszip');
+
 (() => {
 
 // wraper console.xxx() to add prefix

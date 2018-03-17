@@ -1,3 +1,5 @@
+const acorn = require('acorn');
+
 (() => {
 
 // wraper console.xxx() to add prefix
@@ -25,7 +27,7 @@ window.addEventListener('load', () => {
     })();`;
   document.body.appendChild(scriptElem);
 
-  const scriptsToInject = ['jszip.min.js', 'nflxmultisubs.min.js'];
+  const scriptsToInject = ['nflxmultisubs.min.js'];
   scriptsToInject.forEach(scriptName => {
     const scriptElem = document.createElement('script');
     scriptElem.setAttribute('type', 'text/javascript');
