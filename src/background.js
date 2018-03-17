@@ -1,3 +1,6 @@
+const kDefaultSettings = require('./default-settings');
+
+
 chrome.webRequest.onBeforeRequest.addListener(details => {
   console.log(`Denying: ${details.url}`);
   return { cancel: true, };
@@ -11,20 +14,6 @@ chrome.webRequest.onBeforeRequest.addListener(details => {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-const kDefaultSettings = {
-  upperBaselinePos: 0.15,
-  lowerBaselinePos: 0.85,
-  primaryImageScale: 0.75,
-  primaryImageOpacity: 0.85,
-  primaryTextScale: 0.95,
-  primaryTextOpacity: 0.85,
-  secondaryImageScale: 0.5,
-  secondaryImageOpacity: 0.85,
-  secondaryTextScale: 1.0,
-  secondaryTextStroke: 2.0,
-  secondaryTextOpacity: 0.85,
-};
 
 let gSettings = Object.assign({}, kDefaultSettings);
 
@@ -51,9 +40,9 @@ function saveSettings() {
 
 // ----------------------------------------------------------------------------
 
-function saturateActionIconForTab(tabId) {
+function saturateActionIconForTab(id) {
   chrome.browserAction.setIcon({
-    tabId: tabId,
+    tabId: id,
     path: {
       '16': 'icon16.png',
       '32': 'icon32.png',
@@ -61,9 +50,9 @@ function saturateActionIconForTab(tabId) {
   });
 }
 
-function desaturateActionIconForTab(tabId) {
+function desaturateActionIconForTab(id) {
   chrome.browserAction.setIcon({
-    tabId: tabId,
+    tabId: id,
     path: {
       '16': 'icon16-gray.png',
       '32': 'icon32-gray.png',

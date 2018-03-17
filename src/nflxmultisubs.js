@@ -1,14 +1,8 @@
+const console = require('./console');
 const JSZip = require('jszip');
+const kDefaultSettings = require('./default-settings');
+const PlaybackRateController = require('./playback-rate-controller');
 
-(() => {
-
-// wraper console.xxx() to add prefix
-const prefix = 'NflxMultiSubs>';
-const console = {
-  log: (...args) => window.console.log(prefix, ...args),
-  warn: (...args) => window.console.warn(prefix, ...args),
-  error: (...args) => window.console.error(prefix, ...args),
-};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -17,21 +11,6 @@ const console = {
 let gSubtitles = [], gSubtitleMenu;
 let gMsgPort, gRendererLoop;
 let gVideoRatio = (1080 / 1920);
-
-// FIXME: dedup default settings with background script
-const kDefaultSettings = {
-  upperBaselinePos: 0.15,
-  lowerBaselinePos: 0.85,
-  primaryImageScale: 0.75,
-  primaryImageOpacity: 0.85,
-  primaryTextScale: 0.95,
-  primaryTextOpacity: 0.85,
-  secondaryImageScale: 0.5,
-  secondaryImageOpacity: 0.85,
-  secondaryTextScale: 1.0,
-  secondaryTextStroke: 2.0,
-  secondaryTextOpacity: 0.85,
-};
 let gRenderOptions = Object.assign({}, kDefaultSettings);
 
 
@@ -784,59 +763,11 @@ class NflxMultiSubsManager {
   }
 }
 window.__NflxMultiSubs = new NflxMultiSubsManager();
-})();
 
 
 // =============================================================================
 
 
 // control video playback rate
-// FIXME: quite dirty here XD
-(() => {
-let timer;
-window.addEventListener('keyup', evt => {
-  if (evt.ctrlKey || evt.altKey || evt.shiftKey || evt.metaKey) return;
-  if ((evt.keyCode !== 219 /* [ */) && (evt.keyCode !== 221 /* ] */)) return;
-
-  const playerContainer = document.querySelector('.nf-player-container');
-  if (!playerContainer) return;
-
-  const video = playerContainer.querySelector('video');
-  if (!video) return;
-
-  let playbackRate = video.playbackRate;
-  if (evt.keyCode === 219) playbackRate -= 0.1; // key [ pressed
-  else if (evt.keyCode == 221) playbackRate += 0.1; // ] pressed
-
-  playbackRate = Math.max(Math.min(playbackRate, 3.0), 0.1);
-  video.playbackRate = playbackRate;
-
-  let osd = document.querySelector('.nflxmultisubs-playback-rate');
-  if (!osd) {
-    osd = document.createElement('div');
-    osd.classList.add('nflxmultisubs-playback-rate');
-    osd.style.position = 'absolute'; osd.style.top = '10%'; osd.style.right = '5%';
-    osd.style.fontSize = '36px'; osd.style.fontFamily = 'sans-serif';
-    osd.style.fontWeight = '800'; osd.style.color = 'white';
-    osd.style.display = 'flex'; osd.style.alignItems='center';
-    osd.style.zIndex = 2;
-    playerContainer.appendChild(osd);
-  }
-  if (!osd) return;
-
-  const icon = `<svg viewBox="0 0 100 100" style="height:28px; margin:0 10px;">
-    <polygon points="0 0 45 50 50 50 50 0 95 50 50 100 50 50 45 50 0 100" fill="white"/>
-  </svg>`;
-
-  osd.innerHTML = `${icon}<span>${playbackRate.toFixed(1)}x</span>`;
-
-  if (timer) clearTimeout(timer);
-  osd.style.transition = 'none';
-  osd.style.opacity = '1';
-  timer = setTimeout(() => {
-    osd.style.transition = 'opacity 2.3s';
-    osd.style.opacity = '0';
-    timer = null;
-  }, 200);
-}, false);
-})();
+const playbackRateController = new PlaybackRateController();
+playbackRateController.activate();
