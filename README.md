@@ -1,9 +1,12 @@
 <img src="docs/icon.png?raw=true" height="48"> NflxMultiSubs
 ============================================================
-全球首款支援 Netflix 全語言雙字幕的 Chrome 擴充套件，提供您更佳的觀影體驗！  
+全球首款支援 Netflix 全語言雙字幕的 Chrome/Firefox 擴充套件，提供您更佳的觀影體驗！  
 
-Best ever Chrome extension to unleash bilingual subtitles on Netflix!
+Best ever Chrome/Firefox extension to unleash bilingual subtitles on Netflix!
 
+
+[![Download on Chrome Web Store](docs/chrome-webstore-badge58.png?raw=true)](https://chrome.google.com/webstore/detail/pjhnilfooknlkdonmjnleaomamfehkli/)
+[![Download on Firefox Add-ons](docs/firefox-addons-badge58.png?raw=true)](https://addons.mozilla.org/firefox/addon/nflxmultisubs/)
 
 
 特色
@@ -32,14 +35,6 @@ Best ever Chrome extension to unleash bilingual subtitles on Netflix!
 - 本套件可能與其他 Netflix 相關套件相衝（如 [netflix-1080p](https://github.com/truedread/netflix-1080p)），很遺憾請擇一使用
 - 本套件可能與「廣告阻擋套件」（如 [uBlock Origin](https://chrome.google.com/webstore/detail/ublock-origin/cjpalhdlnbpafiamejdnhcphjbkeiagm) 等）相衝，目前請自行解決 XD
 - 目前 text-based 第二字幕沒有處理 right-to-left (RTL) 語系
-
-
-
-上架囉！趕快去下載
-------------------
-- 狐狸們放心，我們計劃推出 Firefox 版本
-
-[![Download on Chrome Web Store](docs/chrome-webstore-badge58.png?raw=true)](https://chrome.google.com/webstore/detail/pjhnilfooknlkdonmjnleaomamfehkli/)
 
 
 
