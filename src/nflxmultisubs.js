@@ -730,39 +730,49 @@ class NflxMultiSubsManager {
     try {
       console.log(`Manifest: ${manifest.movieId}`);
 
+      const manifestInUrl = /^\/watch\/(\d+)/.exec(window.location.pathname)[1];
+      const playingManifest = (manifest.movieId.toString() === manifestInUrl);
+      if (!playingManifest) {
+        console.log(`Ignored: manifest ${manifest.movieId} not playing`);
+        return;
+      }
+
       const movieChanged = (manifest.movieId !== this.lastMovieId);
-      if (movieChanged) {
-        this.lastMovieId = manifest.movieId;
-        gSubtitles = buildSubtitleList(manifest.textTracks);
+      if (!movieChanged) {
+        console.log(`Ignored: manifest ${manifest.movieId} loaded yet`);
+        return;
+      }
 
-        gSubtitleMenu = new SubtitleMenu();
-        gSubtitleMenu.render();
+      this.lastMovieId = manifest.movieId;
+      gSubtitles = buildSubtitleList(manifest.textTracks);
 
-        // select subtitle to match the default audio track
-        try {
-          const defaultAudioTrack = manifest.audioTracks.find(t => manifest.defaultMedia.indexOf(t.id) >= 0);
-          if (defaultAudioTrack) {
-            const bcp47 = defaultAudioTrack.bcp47;
-            let autoSubtitleId = gSubtitles.findIndex(t => (t.bcp47 === bcp47 && t.isCaption));
-            autoSubtitleId = (autoSubtitleId < 0) ? gSubtitles.findIndex(t => t.bcp47 === bcp47) : autoSubtitleId;
-            if (autoSubtitleId >= 0) {
-              console.log(`Subtitle "${bcp47}" auto-enabled to match audio`);
-              activateSubtitle(autoSubtitleId);
-            }
+      gSubtitleMenu = new SubtitleMenu();
+      gSubtitleMenu.render();
+
+      // select subtitle to match the default audio track
+      try {
+        const defaultAudioTrack = manifest.audioTracks.find(t => manifest.defaultMedia.indexOf(t.id) >= 0);
+        if (defaultAudioTrack) {
+          const bcp47 = defaultAudioTrack.bcp47;
+          let autoSubtitleId = gSubtitles.findIndex(t => (t.bcp47 === bcp47 && t.isCaption));
+          autoSubtitleId = (autoSubtitleId < 0) ? gSubtitles.findIndex(t => t.bcp47 === bcp47) : autoSubtitleId;
+          if (autoSubtitleId >= 0) {
+            console.log(`Subtitle "${bcp47}" auto-enabled to match audio`);
+            activateSubtitle(autoSubtitleId);
           }
         }
-        catch (err) {
-          console.error('Default audio track not found, ', err);
-        }
+      }
+      catch (err) {
+        console.error('Default audio track not found, ', err);
+      }
 
-        // retrieve video ratio
-        try {
-          let { width, height } = manifest.videoTracks[0].downloadables[0];
-          gVideoRatio = height / width;
-        }
-        catch (err) {
-          console.error('Video ratio not available, ', err);
-        }
+      // retrieve video ratio
+      try {
+        let { width, height } = manifest.videoTracks[0].downloadables[0];
+        gVideoRatio = height / width;
+      }
+      catch (err) {
+        console.error('Video ratio not available, ', err);
       }
     }
     catch (err) {
