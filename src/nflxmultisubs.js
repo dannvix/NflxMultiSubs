@@ -135,6 +135,7 @@ class TextSubtitle extends SubtitleBase {
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     text.setAttributeNS(null, 'text-anchor', 'middle');
     text.setAttributeNS(null, 'alignment-baseline', 'hanging');
+    text.setAttributeNS(null, 'dominant-baseline', 'hanging'); // firefox
     text.setAttributeNS(null, 'paint-order', 'stroke');
     text.setAttributeNS(null, 'stroke', 'black');
     text.setAttributeNS(null, 'stroke-width', `${1.0 * options.secondaryTextStroke}px`);
@@ -558,7 +559,15 @@ class RendererLoop {
           if (!(/netflix\.com\/watch/i.test(window.location.href))) {
             // disconnect with background to make our icon grayscale again
             // FIXME: renderer loop shouldn't be responsible for this
-            gMsgPort && (gMsgPort.disconnect() && (gMsgPort = null));
+            if (BROWSER === 'chrome') {
+              gMsgPort && (gMsgPort.disconnect() && (gMsgPort = null));
+            }
+            else if (BROWSER === 'firefox') {
+              window.postMessage({
+                namespace: 'nflxmultisubs',
+                action: 'disconnect'
+              }, '*');
+            }
 
             this.stop();
             break;
@@ -671,18 +680,31 @@ class NflxMultiSubsManager {
     // FIXME: should disconnect this port while there's no video playing, to gray out our icon;
     // However, we can't disconnect when <video> not found in the renderer loop,
     // because there's a small time gap between updateManifest() and <video> is initialize.
-    if (!gMsgPort) {
-      try {
-        const extensionId = window.__nflxMultiSubsExtId;
-        gMsgPort = chrome.runtime.connect(extensionId);
-        console.log(`Linked: ${extensionId}`);
+    if (BROWSER === 'chrome') {
+      if (!gMsgPort) {
+        try {
+          const extensionId = window.__nflxMultiSubsExtId;
+          gMsgPort = chrome.runtime.connect(extensionId);
+          console.log(`Linked: ${extensionId}`);
 
-        gMsgPort.onMessage.addListener((msg) => {
-          if (msg.settings) {
-            gRenderOptions = Object.assign({}, msg.settings);
-            gRendererLoop && gRendererLoop.setRenderDirty();
-          }
-        });
+          gMsgPort.onMessage.addListener((msg) => {
+            if (msg.settings) {
+              gRenderOptions = Object.assign({}, msg.settings);
+              gRendererLoop && gRendererLoop.setRenderDirty();
+            }
+          });
+        }
+        catch (err) {
+          console.warn('Error: cannot talk to background,', err);
+        }
+      }
+    }
+    else {
+      try {
+        window.postMessage({
+          namespace: 'nflxmultisubs',
+          action: 'connect',
+        }, '*');
       }
       catch (err) {
         console.warn('Error: cannot talk to background,', err);
@@ -763,6 +785,23 @@ class NflxMultiSubsManager {
   }
 }
 window.__NflxMultiSubs = new NflxMultiSubsManager();
+
+// =============================================================================
+
+// Firefox: this injected agent cannot talk to extension directly, thus the
+// connection (for applying settings) is relayed by our content script through
+// window.postMessage().
+
+if (BROWSER === 'firefox') {
+  window.addEventListener('message', evt => {
+    if (!evt.data || evt.data.namespace !== 'nflxmultisubs') return;
+
+    if (evt.data.action === 'apply-settings' && evt.data.settings) {
+      gRenderOptions = Object.assign({}, evt.data.settings);
+      gRendererLoop && gRendererLoop.setRenderDirty();
+    }
+  }, false);
+}
 
 
 // =============================================================================

@@ -60,7 +60,9 @@ function desaturateActionIconForTab(tabId) {
   });
 }
 
+
 // -----------------------------------------------------------------------------
+
 
 let gExtPorts = {}; // tabId -> msgPort; for config dispatching
 function dispatchSettings() {
@@ -75,8 +77,11 @@ function dispatchSettings() {
   });
 }
 
-chrome.runtime.onConnectExternal.addListener(port => {
+
+// connected from target website (our injected agent)
+function handleExternalConnection(port) {
   const tabId = port.sender && port.sender.tab && port.sender.tab.id;
+  if (!tabId) return;
 
   gExtPorts[tabId] = port;
   saturateActionIconForTab(tabId);
@@ -89,42 +94,61 @@ chrome.runtime.onConnectExternal.addListener(port => {
     desaturateActionIconForTab(tabId);
     console.log(`Disconnected: ${tabId} (tab)`);
   });
-});
+}
 
 
-// -----------------------------------------------------------------------------
+// connected from our pop-up page
+function handleInternalConnection(port) {
+ const portName = port.name;
+ console.log(`Connected: ${portName} (internal)`);
+
+ if (portName === 'settings') {
+   port.postMessage({ settings: gSettings });
+
+   port.onMessage.addListener(msg => {
+     console.log('Received: settings=', msg.settings);
+     if (!msg.settings) {
+       gSettings = Object.assign({}, kDefaultSettings);
+       port.postMessage({ settings: gSettings });
+     }
+     else {
+       let settings = Object.assign({}, gSettings);
+       settings = Object.assign(settings, msg.settings);
+       if (!validateSettings(settings)) {
+         gSettings = Object.assign({}, kDefaultSettings);
+         port.postMessage({ settings: gSettings });
+       }
+       else {
+         gSettings = settings;
+       }
+     }
+     saveSettings();
+     dispatchSettings();
+   });
+ }
+
+ port.onDisconnect.addListener(() => {
+   console.log(`Disconnected: ${portName} (internal)`);
+ });
+}
 
 
-chrome.runtime.onConnect.addListener(port => {
-  const portName = port.name;
-  console.log(`Connected: ${portName} (internal)`);
+// handle connections from target website and our pop-up
+if (BROWSER === 'chrome') {
+  chrome.runtime.onConnectExternal.addListener(
+    port => handleExternalConnection(port));
 
-  if (portName === 'settings') {
-    port.postMessage({ settings: gSettings });
-
-    port.onMessage.addListener(msg => {
-      console.log('Received: settings=', msg.settings);
-      if (!msg.settings) {
-        gSettings = Object.assign({}, kDefaultSettings);
-        port.postMessage({ settings: gSettings });
-      }
-      else {
-        let settings = Object.assign({}, gSettings);
-        settings = Object.assign(settings, msg.settings);
-        if (!validateSettings(settings)) {
-          gSettings = Object.assign({}, kDefaultSettings);
-          port.postMessage({ settings: gSettings });
-        }
-        else {
-          gSettings = settings;
-        }
-      }
-      saveSettings();
-      dispatchSettings();
-    });
-  }
-
-  port.onDisconnect.addListener(() => {
-    console.log(`Disconnected: ${portName} (internal)`);
+  chrome.runtime.onConnect.addListener(
+    port => handleInternalConnection(port));
+}
+else {
+  // Firefox: either from website (injected agent) or pop-up are all "internal"
+  chrome.runtime.onConnect.addListener(port => {
+    if (port.sender && port.sender.tab) {
+      handleExternalConnection(port);
+    }
+    else {
+      handleInternalConnection(port);
+    }
   });
-});
+}

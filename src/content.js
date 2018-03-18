@@ -30,7 +30,6 @@ window.addEventListener('load', () => {
 });
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -64,11 +63,26 @@ const observer = new MutationObserver(mutations => {
 
       const _patchCodeAndLoad = (playerScript) => {
         const patched = patch(playerScript);
-        const blob = new Blob([patched], { type: 'text/javascript', });
-        playerNode.setAttribute('src', URL.createObjectURL(blob));
-        playerNode.addEventListener('load', () => {
-          URL.revokeObjectURL(node.getAttribute('src'));
-        });
+        const blob = new Blob([patched], { type: 'text/javascript' });
+
+        if (BROWSER === 'chrome') {
+          playerNode.setAttribute('src', URL.createObjectURL(blob));
+          playerNode.addEventListener('load', () => {
+            URL.revokeObjectURL(playerNode.getAttribute('src'));
+          });
+        }
+        else if (BROWSER === 'firefox') {
+          // replacing "src" does not trigger execution in Firefox,
+          // thus we need to replace the <script> node;
+          // fortunately, Netflix player page works well with the replacement
+          const newPlayer = document.createElement('script');
+          newPlayer.setAttribute('id', playerNode.getAttribute('id'));
+          newPlayer.setAttribute('src', URL.createObjectURL(blob));
+          newPlayer.addEventListener('load', () => {
+            URL.revokeObjectURL(newPlayer.getAttribute('src'));
+          });
+          playerNode.replaceWith(newPlayer);
+        }
       };
 
       // fetch original player code, and patch it!
@@ -100,10 +114,50 @@ const observer = new MutationObserver(mutations => {
       observer.disconnect();
 
       // FYI to users who open the developer console
-      console.log(`FYI: "net::ERR_BLOCKED_BY_CLIENT" error is intented`,
-        `(for player code patching)`);
+      if (BROWSER === 'chrome') {
+        console.log(`FYI: "net::ERR_BLOCKED_BY_CLIENT" error is intented`,
+          `(for player code patching)`);
+      }
+      else if (BROWSER === 'firefox') {
+        console.log(`FYI: "Loading failed for the <script>" error is intented`,
+          `(for player code patching)`);
+      }
     });
   });
 });
 const options = { subtree: true, childList: true, };
 observer.observe(document, options);
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Firefox: the target website (our injected agent) cannot connect to extensions
+// directly, thus we need to relay the connection in this content script.
+
+let gMsgPort;
+window.addEventListener('message', evt => {
+  if (!evt.data || evt.data.namespace !== 'nflxmultisubs') return;
+
+  if (evt.data.action === 'connect') {
+    if (!gMsgPort) {
+      gMsgPort = browser.runtime.connect(browser.runtime.id);
+      gMsgPort.onMessage.addListener(msg => {
+        if (msg.settings) {
+          window.postMessage({
+            namespace: 'nflxmultisubs',
+            action: 'apply-settings',
+            settings: msg.settings,
+          }, '*');
+        }
+      });
+    }
+  }
+  else if (evt.data.action === 'disconnect') {
+    if (gMsgPort) {
+      gMsgPort.disconnect();
+      gMsgPort = null;
+      gMsgPort.disconnect();
+    }
+  }
+}, false);

@@ -124,8 +124,11 @@ function injectCallback(script) {
 }
 
 
+// -----------------------------------------------------------------------------
+
+
 // add 1080p for Chrome (ref. https://github.com/truedread/netflix-1080p)
-function injectHiResHack(script) {
+function injectHiResHackChrome(script) {
   const ast = acorn.parse(script);
 
   // looking for `uaTestResult = /CrOS/.test(a.userAgent);` and `uaTestResult && this.oo.push(x.V.TH);` in a same function
@@ -225,6 +228,103 @@ function injectHiResHack(script) {
 // -----------------------------------------------------------------------------
 
 
+// add 1080p for Firefox
+function injectHiResHackFirefox(script) {
+  const ast = acorn.parse(script);
+
+  // looking for profiles enumeration in a same function, for example:
+  // ...
+  // f.sI = "playready-h264mpl30-dash";
+  // f.dB = "playready-h264mpl31-dash";
+  // f.PV = "playready-h264mpl40-dash";
+  // ...
+  const ptn1 = {
+    type: 'BlockStatement',
+    body: ['playready-h264mpl30-dash',
+           'playready-h264mpl31-dash',
+           'playready-h264mpl40-dash'].map((p, i) => {
+      return {
+        type: 'ExpressionStatement',
+        expression: {
+          type: 'AssignmentExpression',
+          operator: '=',
+          left: {
+            type: 'MemberExpression',
+            property: {
+              $capture: `profile-${i}`,
+              type: 'Identifier',
+            },
+          },
+          right: {
+            type: 'Literal',
+            value: p,
+          },
+        },
+      };
+    }),
+  };
+
+  let prof0, prof1, prof2;
+  let found = findOneOnAcornAst(ast, ptn1, (captureId, astNode) => {
+    if (captureId === 'profile-0') prof0 = astNode.name;
+    else if (captureId === 'profile-1') prof1 = astNode.name;
+    else if (captureId === 'profile-2') prof2 = astNode.name;
+  });
+  if (!found || !prof0 || !prof1 || !prof2) return null;
+
+  // looking for profile set up, for example:
+  // ...
+  // this.sr = [D.V.sI, D.V.dB];
+  // ...
+  const ptn2 = {
+    type: 'AssignmentExpression',
+    left: {
+      type: 'MemberExpression',
+      object: {
+        type: 'ThisExpression',
+      },
+    },
+    right: {
+      $capture: 'profiles-list',
+      type: 'ArrayExpression',
+      elements: [
+        {
+          type: 'MemberExpression',
+          property: {
+            type: 'Identifier',
+            name: prof0,
+          }
+        },
+        {
+          $capture: 'profile-stmt',
+          type: 'MemberExpression',
+          property: {
+            type: 'Identifier',
+            name: prof1,
+          }
+        },
+      ],
+    },
+  };
+
+  let listEnd, profileStmt;
+  found = findOneOnAcornAst(ast, ptn2, (captureId, astNode) => {
+    if (captureId === 'profiles-list') {
+      listEnd = (astNode.end - 1);
+    }
+    else if (captureId === 'profile-stmt') {
+      profileStmt = script.substr(astNode.start, (astNode.end - astNode.start));
+    }
+  });
+  if (!found || !listEnd || !profileStmt) return null;
+
+  return script.substr(0, listEnd) + ',' + profileStmt.replace(prof1, prof2) + script.substr(listEnd);
+}
+
+
+// -----------------------------------------------------------------------------
+
+
 module.exports = {
   patch: (script) => {
     let patched = injectCallback(script);
@@ -236,7 +336,14 @@ module.exports = {
       console.error('Error: cannot inject callback');
     }
 
-    patched = injectHiResHack(script);
+
+    if (BROWSER === 'chrome') {
+      patched = injectHiResHackChrome(script);
+    }
+    else if (BROWSER === 'firefox') {
+      patched = injectHiResHackFirefox(script);
+    }
+
     if (patched) {
       script = patched;
       console.log('Patched: hi-res hack');
