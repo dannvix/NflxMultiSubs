@@ -106,21 +106,17 @@ function injectCallback(script) {
     },
   };
 
-  let injectionOffset, manifestIdName;
+  let injectionOffset, manifestId;
   const found = findOneOnAcornAst(ast, pattern, (captureId, astNode) => {
-    if (captureId === 'root') {
-      injectionOffset = astNode.start;
-    }
-    else if (captureId === 'manifest') {
-      manifestIdName = astNode.name;
-    }
+    if (captureId === 'root') injectionOffset = astNode.start;
+    else if (captureId === 'manifest') manifestId = astNode.name;
   });
 
-  if (found && (injectionOffset !== undefined)) {
-    const payload = `(window.__NflxMultiSubs&&window.__NflxMultiSubs.updateManifest(a));`;
-    return script.substr(0, injectionOffset) + payload + script.substr(injectionOffset);
-  }
-  return null;
+  if (!found || injectionOffset === undefined || !manifestId) return null;
+
+  const ourName = 'window.__NflxMultiSubs';
+  const payload = `(${ourName}&&${ourName}.updateManifest(${manifestId}));`;
+  return script.substr(0, injectionOffset) + payload + script.substr(injectionOffset);
 }
 
 
