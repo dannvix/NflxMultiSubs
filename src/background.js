@@ -40,9 +40,9 @@ function saveSettings() {
 
 // ----------------------------------------------------------------------------
 
-function saturateActionIconForTab(id) {
+function saturateActionIconForTab(tabId) {
   chrome.browserAction.setIcon({
-    tabId: id,
+    tabId: tabId,
     path: {
       '16': 'icon16.png',
       '32': 'icon32.png',
@@ -50,9 +50,9 @@ function saturateActionIconForTab(id) {
   });
 }
 
-function desaturateActionIconForTab(id) {
+function desaturateActionIconForTab(tabId) {
   chrome.browserAction.setIcon({
-    tabId: id,
+    tabId: tabId,
     path: {
       '16': 'icon16-gray.png',
       '32': 'icon32-gray.png',

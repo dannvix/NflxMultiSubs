@@ -3,6 +3,7 @@ const path = require('path');
 const webpack = require('webpack');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const UglifyJsWebpackPlugin = require('uglifyjs-webpack-plugin');
 
 
 // =============================================================================
@@ -48,6 +49,16 @@ const config = {
         flatten: true,
       },
     ]),
+    new UglifyJsWebpackPlugin({
+      // ref. https://github.com/webpack/webpack/issues/6567#issuecomment-369554250
+      uglifyOptions: {
+        ecma: 8,
+        compress: {
+          inline: 1,
+        },
+        parallel: true,
+      },
+    }),
   ],
 };
 
