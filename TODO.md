@@ -18,12 +18,8 @@ Features
     - 透過 message port 改 `gRenderOptions` 然後呼叫 `gRendererLoop.setRenderDirty()` 強迫重繪即可即時預覽
     - 考慮到使用者的不同裝置可能需要不同設定，建議使用 `chrome.storage.local` 而非一般推薦的 `chrome.storage.sync` 來存放設定值
 
-- [ ] 移植至 Firefox
-    - 同為 WebExtension 架構，整體差異不大
-    - 有些地方的 `chrome` 要改用 `browser`，如 `browser.webRequest.xxx`
-    - CSS style 如果有 vendor prefix 的也需要留意
-
 - [ ] 更新之後跳個 What's new 頁面給使用者看看
+
 
 
 Miscellaneous
@@ -31,10 +27,6 @@ Miscellaneous
 - [ ] 改進效能
     - 目前很硬幹地在 `window.requestAnimationFrame()` 裡跑一堆東西
     - 這個 renderer loop 應該可以少做一點事情（像是不必要的 DOM queries ……）
-
-- [ ] 改進開發環境，目前都還挺土砲的 XD
-    - 每次都會重 build 所有東西，也沒有過 linter
-    - 打算整合 [webpack](https://webpack.js.org/) 或 [Rollup](https://rollupjs.org/guide/en)
 
 - [ ] 將文件都變成中英雙語？
 
