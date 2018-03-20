@@ -671,7 +671,27 @@ class NflxMultiSubsManager {
     this.lastMovieId = undefined;
     this.playerUrl = undefined;
     this.playerVersion = undefined;
+    this.busyWaitTimeout = 10000; // ms
   }
+
+  async busyWaitVideoElement() {
+    return new Promise((resolve, reject) => {
+      let timer = this.busyWaitTimeout / 200;
+      const intervalId = setInterval(() => {
+        const video = document.querySelector('#appMountPoint video');
+        if (video) {
+          clearInterval(intervalId);
+          resolve();
+        } else if (timer > 0) {
+          timer -= 1;
+        } else {
+          clearInterval(intervalId);
+          reject('Find video element timeout.');
+        }
+      }, 200);
+    });
+  }
+
   updateManifest(manifest) {
     const isInPlayerPage = /netflix\.com\/watch/i.test(window.location.href);
     if (!isInPlayerPage) return;
@@ -787,11 +807,15 @@ class NflxMultiSubsManager {
       console.log('Terminated: old renderer loop');
     }
 
-    if (!gRendererLoop) {
-      gRendererLoop = new RendererLoop();
-      gRendererLoop.start();
-      console.log('Started: renderer loop');
-    }
+    this.busyWaitVideoElement().then(() => {
+      if (!gRendererLoop) {
+        gRendererLoop = new RendererLoop();
+        gRendererLoop.start();
+        console.log('Started: renderer loop');
+      }
+    }).catch(err => {
+      console.error('Fatal: ', err);
+    });
   }
 }
 window.__NflxMultiSubs = new NflxMultiSubsManager();
