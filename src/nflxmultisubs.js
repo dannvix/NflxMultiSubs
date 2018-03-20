@@ -674,7 +674,7 @@ class NflxMultiSubsManager {
     this.busyWaitTimeout = 10000; // ms
   }
 
-  async busyWaitVideoElement() {
+  busyWaitVideoElement() {
     return new Promise((resolve, reject) => {
       let timer = this.busyWaitTimeout / 200;
       const intervalId = setInterval(() => {
