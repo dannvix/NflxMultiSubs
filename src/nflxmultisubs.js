@@ -836,6 +836,7 @@ class NflxMultiSubsManager {
     const manifestInUrl = /^\/watch\/(\d+)/.exec(window.location.pathname)[1];
     const found = this.manifestList.find(manifest => manifest.movieId.toString() === manifestInUrl);
     if (found) {
+      console.log('rendererLoop destroyed to prepare next episode.')
       this.updateManifest(found);
     } else {
       console.error('rendererLoop destroyed but no valid manifest.')
