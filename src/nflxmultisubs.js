@@ -830,6 +830,9 @@ class NflxMultiSubsManager {
   }
 
   rendererLoopDestroy() {
+    const isInPlayerPage = /netflix\.com\/watch/i.test(window.location.href);
+    if (!isInPlayerPage) return;
+
     const manifestInUrl = /^\/watch\/(\d+)/.exec(window.location.pathname)[1];
     const found = this.manifestList.find(manifest => manifest.movieId.toString() === manifestInUrl);
     if (found) {
