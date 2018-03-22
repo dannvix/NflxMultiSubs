@@ -524,10 +524,10 @@ class PrimaryTextTransformer {
 
 // FIXME: refactor this class
 class RendererLoop {
-  constructor() {
+  constructor(video) {
     this.isRunning = false;
     this.isRenderDirty = undefined; // windows resize or config change, force re-render
-    this.videoElem = undefined;
+    this.videoElem = video;
     this.subtitleWrapperElem = undefined; // secondary subtitles wrapper (outer)
     this.subSvg = undefined; // secondary subtitles container
     this.primaryImageTransformer = new PrimaryImageTransformer();
@@ -550,8 +550,12 @@ class RendererLoop {
   loop() {
     try {
       do {
-        if (!this.videoElem || !this.videoElem.parentNode) {
-          this.videoElem = document.querySelector('#appMountPoint video');
+        const currentVideoElem = document.querySelector('#appMountPoint video');
+        if (currentVideoElem && this.videoElem.src !== currentVideoElem.src) {
+          // some video change episodes by update video src
+          // force terminate renderer loop if src changed
+          window.__NflxMultiSubs.rendererLoopDestroy();
+          break;
         }
         if (!this.videoElem) {
           // this script may be loaded while user's at the movie list page,
@@ -671,23 +675,24 @@ class NflxMultiSubsManager {
     this.lastMovieId = undefined;
     this.playerUrl = undefined;
     this.playerVersion = undefined;
-    this.busyWaitTimeout = 10000; // ms
+    this.busyWaitTimeout = 100000; // ms
+    this.manifestList = [];
   }
 
   busyWaitVideoElement() {
-    return new Promise((resolve, reject) => {
-      let timer = this.busyWaitTimeout / 200;
+    // Never reject
+    return new Promise((resolve, _) => {
+      let timer = 0;
       const intervalId = setInterval(() => {
         const video = document.querySelector('#appMountPoint video');
         if (video) {
+          if (timer * 200 === this.busyWaitTimeout) {
+            // Notify user can F5 or just keep wait...
+          }
           clearInterval(intervalId);
-          resolve();
-        } else if (timer > 0) {
-          timer -= 1;
-        } else {
-          clearInterval(intervalId);
-          reject('Find video element timeout.');
+          resolve(video);
         }
+        timer += 1;
       }, 200);
     });
   }
@@ -695,6 +700,10 @@ class NflxMultiSubsManager {
   updateManifest(manifest) {
     const isInPlayerPage = /netflix\.com\/watch/i.test(window.location.href);
     if (!isInPlayerPage) return;
+
+    if (!this.manifestList.find(m => m.movieId === manifest.movieId)) {
+      this.manifestList.push(manifest);
+    }
 
     // connect with background script
     // FIXME: should disconnect this port while there's no video playing, to gray out our icon;
@@ -754,6 +763,8 @@ class NflxMultiSubsManager {
       const playingManifest = (manifest.movieId.toString() === manifestInUrl);
       if (!playingManifest) {
         console.log(`Ignored: manifest ${manifest.movieId} not playing`);
+        // Ignore but store it.
+        this.manifestList.push(manifest);
         return;
       }
 
@@ -807,15 +818,29 @@ class NflxMultiSubsManager {
       console.log('Terminated: old renderer loop');
     }
 
-    this.busyWaitVideoElement().then(() => {
+    this.busyWaitVideoElement().then(video => {
       if (!gRendererLoop) {
-        gRendererLoop = new RendererLoop();
+        gRendererLoop = new RendererLoop(video);
         gRendererLoop.start();
         console.log('Started: renderer loop');
       }
     }).catch(err => {
       console.error('Fatal: ', err);
     });
+  }
+
+  rendererLoopDestroy() {
+    const isInPlayerPage = /netflix\.com\/watch/i.test(window.location.href);
+    if (!isInPlayerPage) return;
+
+    const manifestInUrl = /^\/watch\/(\d+)/.exec(window.location.pathname)[1];
+    const found = this.manifestList.find(manifest => manifest.movieId.toString() === manifestInUrl);
+    if (found) {
+      console.log('rendererLoop destroyed to prepare next episode.')
+      this.updateManifest(found);
+    } else {
+      console.error('rendererLoop destroyed but no valid manifest.')
+    }
   }
 }
 window.__NflxMultiSubs = new NflxMultiSubsManager();
