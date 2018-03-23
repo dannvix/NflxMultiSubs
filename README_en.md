@@ -90,7 +90,7 @@ How to update Chrome extension?
 Let's Oepn source! Willing to contribute?
 --------------------------
 - Clone the project, and then `$ npm install && npm run build`
-- Refer to [TODO.md](TODO.md) for todo list.
+- Refer to [TODO_en.md](TODO_en.md) for todo list.
 
 
 Licenses

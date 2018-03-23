@@ -1,5 +1,7 @@
 TODO
 ====
+***For English version, please refer to [`TODO_en.md`](TODO_en.md).***
+
 歡迎送 PR！但請保持本套件簡單易用，太複雜的功能可能不會被 merge 哦！
 
 
@@ -28,6 +30,6 @@ Miscellaneous
     - 目前很硬幹地在 `window.requestAnimationFrame()` 裡跑一堆東西
     - 這個 renderer loop 應該可以少做一點事情（像是不必要的 DOM queries ……）
 
-- [ ] 將文件都變成中英雙語？
+- [x] 將文件都變成中英雙語？
 
 - [ ] 原始碼重構（好吧，這應該是個永遠不會被打勾的持續項目 XD）
