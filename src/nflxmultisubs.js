@@ -522,7 +522,6 @@ class PrimaryTextTransformer {
 }
 
 
-// FIXME: refactor this class
 class RendererLoop {
   constructor(video) {
     this.isRunning = false;
@@ -549,113 +548,126 @@ class RendererLoop {
 
   loop() {
     try {
-      do {
-        const currentVideoElem = document.querySelector('#appMountPoint video');
-        if (currentVideoElem && this.videoElem.src !== currentVideoElem.src) {
-          // some video change episodes by update video src
-          // force terminate renderer loop if src changed
-          window.__NflxMultiSubs.rendererLoopDestroy();
-          break;
-        }
-        if (!this.videoElem) {
-          // this script may be loaded while user's at the movie list page,
-          // thus if there's no video playing, we can end the renderer loop
-          if (!(/netflix\.com\/watch/i.test(window.location.href))) {
-            // disconnect with background to make our icon grayscale again
-            // FIXME: renderer loop shouldn't be responsible for this
-            if (BROWSER === 'chrome') {
-              gMsgPort && (gMsgPort.disconnect() && (gMsgPort = null));
-            }
-            else if (BROWSER === 'firefox') {
-              window.postMessage({
-                namespace: 'nflxmultisubs',
-                action: 'disconnect'
-              }, '*');
-            }
-
-            this.stop();
-            break;
-          }
-        }
-
-        let controlsActive = false;
-        const controlsElem = document.querySelector('.controls');
-        if (controlsElem) {
-          if (!controlsElem.style.zIndex) {
-            // elevate the navs' z-index (to be on top of our subtitles)
-            controlsElem.style.zIndex = 3;
-          }
-          controlsActive = controlsElem.classList.contains('active');
-        }
-
-        // NOTE: don't do this, the render rate is too high to shown the
-        // image in SVG for secondary subtitles.... O_Q
-        // if (controlsActive) {
-        //   this.setRenderDirty(); // to move up subttles
-        // }
-
-        if (!this.subtitleWrapperElem || !this.subtitleWrapperElem.parentNode) {
-          const playerContainerElem = document.querySelector('.nf-player-container');
-          if (!playerContainerElem) break;
-          this.subtitleWrapperElem = buildSecondarySubtitleElement(gRenderOptions);
-          playerContainerElem.appendChild(this.subtitleWrapperElem);
-        }
-
-
-        // transform & scale primary subtitles
-        // ---------------------------------------------------------------------
-        // NOTE: we cannot put `primaryImageSubSvg` into instance state,
-        // because there are multiple instance of the SVG and they're switched
-        // when the langauge of primary subtitles is switched.
-        const primaryImageSubSvg = document.querySelector('.image-based-timed-text svg');
-        if (primaryImageSubSvg) {
-          this.primaryImageTransformer.transform(
-            primaryImageSubSvg, controlsActive, !!this.isRenderDirty);
-        }
-
-        const primaryTextSubDiv = document.querySelector('.player-timedtext');
-        if (primaryTextSubDiv) {
-          this.primaryTextTransformer.transform(
-            primaryTextSubDiv, controlsActive, !!this.isRenderDirty);
-        }
-
-
-        // render secondary subtitles
-        // ---------------------------------------------------------------------
-        if (!this.subSvg || !this.subSvg.parentNode) {
-          this.subSvg = this.subtitleWrapperElem.querySelector('svg');
-        }
-        const seconds = this.videoElem.currentTime;
-        const sub = gSubtitles.find(sub => sub.active);
-        if (sub) {
-          if (sub instanceof TextSubtitle) {
-            const rect = this.videoElem.getBoundingClientRect();
-            sub.setExtent(rect.width, rect.height);
-          }
-
-          const renderedElems = sub.render(seconds, gRenderOptions, !!this.isRenderDirty);
-          if (renderedElems) {
-            const [ extentWidth, extentHeight ] = sub.getExtent();
-            if (extentWidth && extentHeight) {
-              this.subSvg.setAttribute('viewBox', `0 0 ${extentWidth} ${extentHeight}`);
-            }
-            [].forEach.call(this.subSvg.querySelectorAll('*'), elem => elem.parentNode.removeChild(elem));
-            renderedElems.forEach(elem => this.subSvg.appendChild(elem));
-          }
-        }
-        // FIXME: dirty transform & magic offets
-        // this leads to a big gap between primary & secondary subtitles
-        // when the progress bar is shown
-        this.subtitleWrapperElem.style.top = (controlsActive) ? '-100px' : '0';
-
-        // everything rendered, clear the dirty bit with ease
-        this.isRenderDirty = false;
-      } while (0);
-
+      this._loop();
       this.isRunning && window.requestAnimationFrame(this.loop.bind(this));
     }
     catch (err) {
       console.error('Fatal: ', err);
+    }
+  }
+
+  _loop() {
+    const currentVideoElem = document.querySelector('#appMountPoint video');
+    if (currentVideoElem && this.videoElem.src !== currentVideoElem.src) {
+      // some video change episodes by update video src
+      // force terminate renderer loop if src changed
+      window.__NflxMultiSubs.rendererLoopDestroy();
+      return;
+    }
+
+    // this script may be loaded while user's at the movie list page,
+    // thus if there's no video playing, we can end the renderer loop
+    if (!this.videoElem &&
+        !(/netflix\.com\/watch/i.test(window.location.href))) {
+      this._disconnect();
+      this.stop();
+      return;
+    }
+
+    const controlsActive = this._getControlsActive();
+    // NOTE: don't do this, the render rate is too high to shown the
+    // image in SVG for secondary subtitles.... O_Q
+    // if (controlsActive) {
+    //   this.setRenderDirty(); // to move up subttles
+    // }
+    if (!this._appendSubtitleWrapper()) {
+      return;
+    }
+
+    this._adjustPrimarySubtitles(controlsActive, !!this.isRenderDirty);
+    this._renderSecondarySubtitles();
+
+    // render secondary subtitles
+    // ---------------------------------------------------------------------
+    // FIXME: dirty transform & magic offets
+    // this leads to a big gap between primary & secondary subtitles
+    // when the progress bar is shown
+    this.subtitleWrapperElem.style.top = controlsActive ? '-100px' : '0';
+
+    // everything rendered, clear the dirty bit with ease
+    this.isRenderDirty = false;
+  }
+
+  _disconnect() {
+    // disconnect with background to make our icon grayscale again
+    // FIXME: renderer loop shouldn't be responsible for this
+    if (BROWSER === 'chrome') {
+      if (gMsgPort && gMsgPort.disconnect()) gMsgPort = null;
+    }
+    else if (BROWSER === 'firefox') {
+      window.postMessage({
+        namespace: 'nflxmultisubs',
+        action: 'disconnect'
+      }, '*');
+    }
+  }
+
+  _getControlsActive() {
+    const controlsElem = document.querySelector('.controls');
+    if (!controlsElem) { return false; }
+    // elevate the navs' z-index (to be on top of our subtitles)
+    if (!controlsElem.style.zIndex) { controlsElem.style.zIndex = 3; }
+    return controlsElem.classList.contains('active');
+  }
+
+  // @returns {boolean} Successed?
+  _appendSubtitleWrapper() {
+    if (!this.subtitleWrapperElem || !this.subtitleWrapperElem.parentNode) {
+      const playerContainerElem = document.querySelector('.nf-player-container');
+      if (!playerContainerElem) return false;
+      this.subtitleWrapperElem = buildSecondarySubtitleElement(gRenderOptions);
+      playerContainerElem.appendChild(this.subtitleWrapperElem);
+    }
+    return true;
+  }
+
+  // transform & scale primary subtitles
+  _adjustPrimarySubtitles(active, dirty) {
+    // NOTE: we cannot put `primaryImageSubSvg` into instance state,
+    // because there are multiple instance of the SVG and they're switched
+    // when the langauge of primary subtitles is switched.
+    const primaryImageSubSvg = document.querySelector('.image-based-timed-text svg');
+    if (primaryImageSubSvg) {
+      this.primaryImageTransformer.transform(primaryImageSubSvg, active, dirty);
+    }
+
+    const primaryTextSubDiv = document.querySelector('.player-timedtext');
+    if (primaryTextSubDiv) {
+      this.primaryTextTransformer.transform(primaryTextSubDiv, active, dirty);
+    }
+  }
+
+  _renderSecondarySubtitles() {
+    if (!this.subSvg || !this.subSvg.parentNode) {
+      this.subSvg = this.subtitleWrapperElem.querySelector('svg');
+    }
+    const seconds = this.videoElem.currentTime;
+    const sub = gSubtitles.find(sub => sub.active);
+    if (!sub) { return; }
+
+    if (sub instanceof TextSubtitle) {
+      const rect = this.videoElem.getBoundingClientRect();
+      sub.setExtent(rect.width, rect.height);
+    }
+
+    const renderedElems = sub.render(seconds, gRenderOptions, !!this.isRenderDirty);
+    if (renderedElems) {
+      const [ extentWidth, extentHeight ] = sub.getExtent();
+      if (extentWidth && extentHeight) {
+        this.subSvg.setAttribute('viewBox', `0 0 ${extentWidth} ${extentHeight}`);
+      }
+      [].forEach.call(this.subSvg.querySelectorAll('*'), elem => elem.parentNode.removeChild(elem));
+      renderedElems.forEach(elem => this.subSvg.appendChild(elem));
     }
   }
 }
