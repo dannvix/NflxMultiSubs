@@ -4,10 +4,10 @@
 
 Best ever Chrome/Firefox extension to unleash bilingual subtitles on Netflix!
 
-
 [![Download on Chrome Web Store](docs/chrome-webstore-badge58.png?raw=true)](https://chrome.google.com/webstore/detail/pjhnilfooknlkdonmjnleaomamfehkli/)
 [![Download on Firefox Add-ons](docs/firefox-addons-badge58.png?raw=true)](https://addons.mozilla.org/firefox/addon/nflxmultisubs/)
 
+***For English Description, please refer to [`README_en.md`](README_en.md).***
 
 特色
 ----
@@ -57,7 +57,7 @@ Best ever Chrome/Firefox extension to unleash bilingual subtitles on Netflix!
 ### 高畫質 1080p 沒有啟用
 - 請依下方提到的步驟來回報問題
 
-### 只能在 Chrome 桌面版用嗎？
+### 只能在 Chrome/ Firefox 桌面版用嗎？
 - 沒錯，手機、平版電腦、智慧電視、Apple TV、Chromecast、………通通不支援
 - 因為技術限制，未來也不會支援這些平台，只能跪求 Netflix 官方釋出囉
 
@@ -75,7 +75,7 @@ Best ever Chrome/Firefox extension to unleash bilingual subtitles on Netflix!
 --------
 - 請幫忙蒐集執行記錄（如下圖），然後貼到 [Issues](https://github.com/dannvix/NflxMultiSubs/issues) 回報
     - View > Developer > JavaScript Console
-    - 希望也能同時提供您使用的 Chrome 版本、此套件的版本等資訊
+    - 希望也能同時提供您使用的 Chrome/ Firefox 版本、此套件的版本等資訊
 
 ![JavaScript console logs](docs/js-console.png?raw=true)
 
