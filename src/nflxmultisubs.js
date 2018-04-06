@@ -17,6 +17,161 @@ let gRenderOptions = Object.assign({}, kDefaultSettings);
 ////////////////////////////////////////////////////////////////////////////////
 
 
+class ForceSyncHelper {
+  constructor() {
+    this.isReady = false;
+    this.state = "WAIT";  // {WAIT, TIMEOUT, UPDATED, REMOVED}
+    this.timeoutLimit = 250;
+    this.timer = null;
+    this.observers = {};
+    this.active = true;
+  }
+
+  /**
+   * Called when secondary subtitle tries to refresh
+   * 
+   * @param removal true if refresh goal is to remove current sentence
+   * @return true if accept, false if decline
+   */
+  trigger(removal) {
+    if (!this.isReady) return true;
+    console.debug("triggered with state:", this.state);
+    switch(this.state) {
+      case 'WAIT':
+        this._hurry();
+        return false;
+      case 'TIMEOUT':
+        this._idle();
+        return true;
+      case 'UPDATED':
+        if (!removal) this._idle();
+        return true;
+      case 'REMOVED':
+        if (!removal) {
+          this._hurry();
+          return false;
+        } else {
+          this._idle();
+          return true;
+        }
+        break;
+      default:
+        console.error("Unexpected state: " + this.state);
+    }
+  }
+
+  activate() {
+    this._monitorMainSubtitle(
+      '.player-timedtext',
+      function(wrapper) {
+        let container = wrapper.querySelector('.player-timedtext-text-container');
+        let arr = [].slice.call(container.children);
+        return arr.map(span => span.innerHTML).join('\n');
+      },
+      'text-based'
+    );
+    this._monitorMainSubtitle(
+      '.image-based-timed-text svg',
+      function(wrapper) {
+        let arr = [].slice.call(wrapper.children);
+        return arr.map(image => image.getAttribute('href')).join('\n');
+      },
+      'image-based'
+    );
+  }
+
+  deactivate() {
+    this.active = false;
+    for (let desc in this.observers){
+      let observer = this.observers[desc];
+      observer.disconnect();
+    }
+  }
+
+  _monitorMainSubtitle(wrapperSelector, identifyMethod, desc) {
+    let wrapper = document.querySelector(wrapperSelector);
+    if (!wrapper) {
+      // Retry if wrapper hasn't been loaded (or does not exist)
+      if (this.active) setTimeout(this._monitorMainSubtitle.bind(this, wrapperSelector, identifyMethod, desc), 1000);
+      return;
+    }
+    console.log('Start observing main subtitle (' + desc + ') update');
+    this.isReady = true;
+    let lastUpdated = "";
+    let self = this;
+    let observer = new MutationObserver(function(mutationsList) {
+      for (var mutation of mutationsList) {
+        if (!wrapper.children.length) {
+          lastUpdated = "";
+          self._refreshState("REMOVED");
+          console.debug('Subtitle removed.');
+        } else {
+          const identifier = identifyMethod(wrapper);
+          if (identifier == lastUpdated) continue;
+          lastUpdated = identifier;
+          self._refreshState("UPDATED");
+          console.debug('Subtitle updated:', identifier);
+        }
+      }
+    });
+    this.observers[desc] = observer;
+    observer.observe(wrapper, {
+      childList: true,
+    });
+  }
+
+  _hurry() {
+    if (!this.timer) {
+      console.debug("hurry");
+      this.timer = setTimeout(() => {
+        console.debug("hey, timeout!");
+        this.state = "TIMEOUT";
+      }, this.timeoutLimit);
+    }
+  }
+
+  _idle() {
+    console.debug("idle");
+    this._refreshState("WAIT");
+  }
+
+  _refreshState(state) {
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+    this.state = state;
+  }
+}
+
+class FpsReporter {
+  constructor(enabled) {
+    this.enabled = enabled;
+    this.fpsCounter = 0;
+    this.timer = null;
+  }
+
+  activate() {
+    if (this.enabled) this._logfps();
+  }
+
+  deactivate() {
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
+  }
+
+  add1() {
+    this.fpsCounter++;
+  }
+
+  _logfps() {
+    console.log('FPS: ' + this.fpsCounter);
+    this.fpsCounter = 0;
+    this.timer = setTimeout(this._logfps.bind(this), 1000);
+  }
+}
+
 class SubtitleBase {
   constructor(lang, bcp47, url) {
     this.state = 'GENESIS';
@@ -28,9 +183,17 @@ class SubtitleBase {
     this.extentHeight = undefined;
     this.lines = undefined;
     this.lastRenderedIds = undefined;
+    this.fpsReporter = new FpsReporter(false);
+    this.forceSyncEnabled = true;
+    this.forceSyncHelper = new ForceSyncHelper();
   }
 
   activate(options) {
+    if (this.forceSyncEnabled) {
+      console.log("Force Sync Enabled (experimental)");
+      this.forceSyncHelper.activate();
+    }
+    this.fpsReporter.activate();
     return new Promise((resolve, reject) => {
       this.active = true;
       if (this.state === 'GENESIS') {
@@ -47,16 +210,23 @@ class SubtitleBase {
 
   deactivate(){
     this.active = false;
+    this.forceSyncHelper.deactivate();
+    this.fpsReporter.deactivate();
   }
 
   render(seconds, options, forced) {
     if (!this.active || this.state !== 'READY' || !this.lines) return [];
     const lines = this.lines.filter(line => (line.begin <= seconds && seconds <= line.end));
     const ids = lines.map(line => line.id).sort().toString();
-
+    this.fpsReporter.add1();
     if (this.lastRenderedIds === ids && !forced) return null;
-    this.lastRenderedIds = ids;
-    return this._render(lines, options);
+    let renderNow = !this.forceSyncEnabled || this.forceSyncHelper.trigger(lines.length == 0);
+    if (renderNow) {
+      this.lastRenderedIds = ids;
+      return (lines.length != 0)? this._render(lines, options): [];
+    } else {
+      return null;
+    }
   }
 
   getExtent() {
