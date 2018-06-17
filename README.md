@@ -1,17 +1,19 @@
+<i align="center"><a href="README_en.md">English</a>, <a href="README.md">中文</a></i>
+
+
 <img src="docs/icon.png?raw=true" height="48"> NflxMultiSubs
 ============================================================
-全球首款支援 Netflix 全語言雙字幕的 Chrome/Firefox 擴充套件，提供您更佳的觀影體驗！  
-
-Best ever Chrome/Firefox extension to unleash bilingual subtitles on Netflix!
-
+Best ever Chrome/Firefox extension to unleash bilingual subtitles on Netflix!  
+全球首款支援 Netflix 全語言雙字幕的 Chrome/Firefox 擴充套件，提供您更佳的觀影體驗！
 
 [![Download on Chrome Web Store](docs/chrome-webstore-badge58.png?raw=true)](https://chrome.google.com/webstore/detail/pjhnilfooknlkdonmjnleaomamfehkli/)
 [![Download on Firefox Add-ons](docs/firefox-addons-badge58.png?raw=true)](https://addons.mozilla.org/firefox/addon/nflxmultisubs/)
 
 
+
 特色
 ----
-- 坊間首款全自動支援日語等語言 (image-based) 第二字幕的擴充套件
+- 坊間首款全自動支援日語、俄文等語言 (image-based) 第二字幕的擴充套件
 - 智慧選擇雙語字幕：看日本動畫顯示日語，看美劇顯示英文
 - 整合原生 Netflix 選單，不需離開播放介面即可切換語言
 - Netflix 有提供的字幕通通可以選，不需要另外找字幕組
@@ -51,13 +53,7 @@ Best ever Chrome/Firefox extension to unleash bilingual subtitles on Netflix!
 ### 主字幕跳到畫面中間
 - 通常只有在進度條顯示的時候才會發生，等到進度條隱藏就好了
 
-### 第二字幕的英文字超小
-- 我們發佈了 `v1.5.0` 來解決這個問題，請更新（重開 Chrome 或手動強制更新，見下方）
-
-### 高畫質 1080p 沒有啟用
-- 請依下方提到的步驟來回報問題
-
-### 只能在 Chrome 桌面版用嗎？
+### 只能在 Chrome / Firefox 桌面版用嗎？
 - 沒錯，手機、平版電腦、智慧電視、Apple TV、Chromecast、………通通不支援
 - 因為技術限制，未來也不會支援這些平台，只能跪求 Netflix 官方釋出囉
 
@@ -75,26 +71,14 @@ Best ever Chrome/Firefox extension to unleash bilingual subtitles on Netflix!
 --------
 - 請幫忙蒐集執行記錄（如下圖），然後貼到 [Issues](https://github.com/dannvix/NflxMultiSubs/issues) 回報
     - View > Developer > JavaScript Console
-    - 希望也能同時提供您使用的 Chrome 版本、此套件的版本等資訊
 
 ![JavaScript console logs](docs/js-console.png?raw=true)
 
 
 
-如何更新 Chrome 套件？
---------------------------
-- 重開整個 Chrome 應該就會更新了
-- 不想重開 Chrome，手動強制更新（見下圖）
-    - 進到套件管理頁面，打勾開發者模式 (Developer mode)
-    - 按新鮮出爐的按鈕 Update extensions now
-    - 可以關閉 Developer mode 了
 
-![Update Chrome extensions manually](docs/chrome-ext-update-manually.png?raw=true)
-
-
-
-開源囉！想一起改進本套件？
---------------------------
+想一起改進本套件？
+------------------
 - Clone 之後跑 `$ npm install && npm run build`
 - 參見 [TODO.md](TODO.md) 的計劃事項
 
