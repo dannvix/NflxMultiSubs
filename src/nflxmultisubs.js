@@ -613,10 +613,20 @@ class RendererLoop {
   }
 
   _getControlsActive() {
-    const controlsElem = document.querySelector('.controls');
-    if (!controlsElem) { return false; }
+    // FIXME: better solution to handle different versions of Netflix web player UI
+    // "Neo Style" refers to the newer version as in 2018/07
+    let controlsElem = document.querySelector('.controls'), neoStyle = false;
+    if (!controlsElem) {
+      controlsElem = document.querySelector('.PlayerControlsNeo__layout');
+      if (!controlsElem) { return false; }
+      neoStyle = true;
+    }
     // elevate the navs' z-index (to be on top of our subtitles)
     if (!controlsElem.style.zIndex) { controlsElem.style.zIndex = 3; }
+
+    if (neoStyle) {
+      return !controlsElem.classList.contains('PlayerControlsNeo__layout--inactive');
+    }
     return controlsElem.classList.contains('active');
   }
 
@@ -836,6 +846,10 @@ class NflxMultiSubsManager {
         gRendererLoop.start();
         console.log('Started: renderer loop');
       }
+
+      // detect for newer version of Netflix web player UI
+      const hasNeoStyleControls = !!document.querySelector('[class*=PlayerControlsNeo]');
+      console.log(`hasNeoStyleControls: ${hasNeoStyleControls}`);
     }).catch(err => {
       console.error('Fatal: ', err);
     });
