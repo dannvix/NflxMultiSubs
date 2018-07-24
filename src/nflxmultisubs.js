@@ -780,67 +780,83 @@ class NflxMultiSubsManager {
 
     try {
       console.log(`Manifest: ${manifest.movieId}`);
+    }
+    catch (err) {
+      console.warn('Error:', err);
+    }
 
-      const manifestInUrl = /^\/watch\/(\d+)/.exec(window.location.pathname)[1];
-      const playingManifest = (manifest.movieId.toString() === manifestInUrl);
-      if (!playingManifest) {
-        console.log(`Ignored: manifest ${manifest.movieId} not playing`);
-        // Ignore but store it.
-        this.manifestList.push(manifest);
-        return;
-      }
-
-      const movieChanged = (manifest.movieId !== this.lastMovieId);
-      if (!movieChanged) {
-        console.log(`Ignored: manifest ${manifest.movieId} loaded yet`);
-        return;
-      }
-
-      this.lastMovieId = manifest.movieId;
-      gSubtitles = buildSubtitleList(manifest.textTracks);
-
-      gSubtitleMenu = new SubtitleMenu();
-      gSubtitleMenu.render();
-
-      // select subtitle to match the default audio track
+    // Sometime the movieId in URL may be different to the actually playing manifest
+    // Thus we also need to check the player DOM tree...
+    this.busyWaitVideoElement().then(video => {
       try {
-        const defaultAudioTrack = manifest.audioTracks.find(t => manifest.defaultMedia.indexOf(t.id) >= 0);
-        if (defaultAudioTrack) {
-          const bcp47 = defaultAudioTrack.bcp47;
-          let autoSubtitleId = gSubtitles.findIndex(t => (t.bcp47 === bcp47 && t.isCaption));
-          autoSubtitleId = (autoSubtitleId < 0) ? gSubtitles.findIndex(t => t.bcp47 === bcp47) : autoSubtitleId;
-          if (autoSubtitleId >= 0) {
-            console.log(`Subtitle "${bcp47}" auto-enabled to match audio`);
-            activateSubtitle(autoSubtitleId);
+        const movieIdInUrl = /^\/watch\/(\d+)/.exec(window.location.pathname)[1];
+        console.log(`Note: movieIdInUrl=${movieIdInUrl}`);
+        let playingManifest = (manifest.movieId.toString() === movieIdInUrl);
+
+        if (!playingManifest) {
+          // magic! ... div.VideoContainer > div#12345678 > video[src=blob:...]
+          const movieIdInPlayerNode = video.parentNode.id;
+          console.log(`Note: movieIdInPlayerNode=${movieIdInPlayerNode}`);
+          playingManifest = movieIdInPlayerNode.includes(manifest.movieId.toString());
+        }
+
+        if (!playingManifest) {
+          console.log(`Ignored: manifest ${manifest.movieId} not playing`);
+          // Ignore but store it.
+          this.manifestList.push(manifest);
+          return;
+        }
+
+        const movieChanged = (manifest.movieId !== this.lastMovieId);
+        if (!movieChanged) {
+          console.log(`Ignored: manifest ${manifest.movieId} loaded yet`);
+          return;
+        }
+
+        this.lastMovieId = manifest.movieId;
+        gSubtitles = buildSubtitleList(manifest.textTracks);
+
+        gSubtitleMenu = new SubtitleMenu();
+        gSubtitleMenu.render();
+
+        // select subtitle to match the default audio track
+        try {
+          const defaultAudioTrack = manifest.audioTracks.find(t => manifest.defaultMedia.indexOf(t.id) >= 0);
+          if (defaultAudioTrack) {
+            const bcp47 = defaultAudioTrack.bcp47;
+            let autoSubtitleId = gSubtitles.findIndex(t => (t.bcp47 === bcp47 && t.isCaption));
+            autoSubtitleId = (autoSubtitleId < 0) ? gSubtitles.findIndex(t => t.bcp47 === bcp47) : autoSubtitleId;
+            if (autoSubtitleId >= 0) {
+              console.log(`Subtitle "${bcp47}" auto-enabled to match audio`);
+              activateSubtitle(autoSubtitleId);
+            }
           }
+        }
+        catch (err) {
+          console.error('Default audio track not found, ', err);
+        }
+
+        // retrieve video ratio
+        try {
+          let { width, height } = manifest.videoTracks[0].downloadables[0];
+          gVideoRatio = height / width;
+        }
+        catch (err) {
+          console.error('Video ratio not available, ', err);
         }
       }
       catch (err) {
-        console.error('Default audio track not found, ', err);
+        console.error('Fatal: ', err);
       }
 
-      // retrieve video ratio
-      try {
-        let { width, height } = manifest.videoTracks[0].downloadables[0];
-        gVideoRatio = height / width;
+
+      if (gRendererLoop) {
+        // just for safety
+        gRendererLoop.stop();
+        gRendererLoop = null;
+        console.log('Terminated: old renderer loop');
       }
-      catch (err) {
-        console.error('Video ratio not available, ', err);
-      }
-    }
-    catch (err) {
-      console.error('Fatal: ', err);
-    }
 
-
-    if (gRendererLoop) {
-      // just for safety
-      gRendererLoop.stop();
-      gRendererLoop = null;
-      console.log('Terminated: old renderer loop');
-    }
-
-    this.busyWaitVideoElement().then(video => {
       if (!gRendererLoop) {
         gRendererLoop = new RendererLoop(video);
         gRendererLoop.start();
