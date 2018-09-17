@@ -919,7 +919,14 @@ class NflxMultiSubsManager {
 
           gSubtitleMenu = new SubtitleMenu();
           gSubtitleMenu.render();
-          console.log(manifest.textTracks);
+
+          /**
+           * 檢查 subtitle 數量是否大於 1 ，如果大於 1 則掛上 keyboard event
+           * 預設數字鍵 0 為關閉 副字幕，副字幕順序由字幕列表選項上到下分配 1 ~ 9
+           * 48~57  為 英文字母上方數字鍵 keycode
+           * 96~105 為 九宮格數字鍵 keycode
+           */
+
           if (manifest.textTracks.length > 1) {
             window.addEventListener('keyup', e => {
               let keyCode =
