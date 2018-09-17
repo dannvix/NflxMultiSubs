@@ -416,9 +416,9 @@ bodyObserver.observe(document.body, observerOptions);
 ////////////////////////////////////////////////////////////////////////////////
 
 activateSubtitle = id => {
-  gSubtitles.forEach(sub => sub.deactivate());
   const sub = gSubtitles[id];
   if (sub) {
+    gSubtitles.forEach(sub => sub.deactivate());
     sub.activate().then(() => gSubtitleMenu && gSubtitleMenu.render());
   }
   gSubtitleMenu && gSubtitleMenu.render();
@@ -920,26 +920,6 @@ class NflxMultiSubsManager {
           gSubtitleMenu = new SubtitleMenu();
           gSubtitleMenu.render();
 
-          /**
-           * 檢查 subtitle 數量是否大於 1 ，如果大於 1 則掛上 keyboard event
-           * 預設數字鍵 0 為關閉 副字幕，副字幕順序由字幕列表選項上到下分配 1 ~ 9
-           * 48~57  為 英文字母上方數字鍵 keycode
-           * 96~105 為 九宮格數字鍵 keycode
-           */
-
-          if (manifest.textTracks.length > 1) {
-            window.addEventListener('keyup', e => {
-              let keyCode =
-                (e.keyCode >= 48 && e.keyCode <= 57) ||
-                (e.keyCode >= 96 && e.keyCode <= 105)
-                  ? e.key
-                  : null;
-              if (keyCode) {
-                activateSubtitle(keyCode);
-              }
-            });
-          }
-
           // select subtitle to match the default audio track
           try {
             const defaultAudioTrack = manifest.audioTracks.find(
@@ -1042,3 +1022,22 @@ if (BROWSER === 'firefox') {
 // control video playback rate
 const playbackRateController = new PlaybackRateController();
 playbackRateController.activate();
+
+/**
+ * 添加 keyboard event ，支援使用鍵盤數字鍵切換副字幕
+ * 預設數字鍵 0 為關閉 副字幕
+ * 副字幕順序由字幕列表選項上到下分配數字鍵 1 ~ 9
+ * 48~57  為 英文字母上方數字鍵 keycode
+ * 96~105 為 九宮格數字鍵 keycode
+ */
+
+window.addEventListener('keyup', e => {
+  let keyCode =
+    (e.keyCode >= 48 && e.keyCode <= 57) ||
+    (e.keyCode >= 96 && e.keyCode <= 105)
+      ? e.key
+      : null;
+  if (keyCode) {
+    activateSubtitle(keyCode);
+  }
+});
