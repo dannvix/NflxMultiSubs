@@ -919,6 +919,19 @@ class NflxMultiSubsManager {
 
           gSubtitleMenu = new SubtitleMenu();
           gSubtitleMenu.render();
+          console.log(manifest.textTracks);
+          if (manifest.textTracks.length > 1) {
+            window.addEventListener('keyup', e => {
+              let keyCode =
+                (e.keyCode >= 48 && e.keyCode <= 57) ||
+                (e.keyCode >= 96 && e.keyCode <= 105)
+                  ? e.key
+                  : null;
+              if (keyCode) {
+                activateSubtitle(keyCode);
+              }
+            });
+          }
 
           // select subtitle to match the default audio track
           try {
