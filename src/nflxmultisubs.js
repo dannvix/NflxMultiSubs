@@ -3,19 +3,16 @@ const JSZip = require('jszip');
 const kDefaultSettings = require('./default-settings');
 const PlaybackRateController = require('./playback-rate-controller');
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 // global states
-let gSubtitles = [], gSubtitleMenu;
+let gSubtitles = [],
+  gSubtitleMenu;
 let gMsgPort, gRendererLoop;
-let gVideoRatio = (1080 / 1920);
+let gVideoRatio = 1080 / 1920;
 let gRenderOptions = Object.assign({}, kDefaultSettings);
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 class SubtitleBase {
   constructor(lang, bcp47, url) {
@@ -45,14 +42,19 @@ class SubtitleBase {
     });
   }
 
-  deactivate(){
+  deactivate() {
     this.active = false;
   }
 
   render(seconds, options, forced) {
     if (!this.active || this.state !== 'READY' || !this.lines) return [];
-    const lines = this.lines.filter(line => (line.begin <= seconds && seconds <= line.end));
-    const ids = lines.map(line => line.id).sort().toString();
+    const lines = this.lines.filter(
+      line => line.begin <= seconds && seconds <= line.end
+    );
+    const ids = lines
+      .map(line => line.id)
+      .sort()
+      .toString();
 
     if (this.lastRenderedIds === ids && !forced) return null;
     this.lastRenderedIds = ids;
@@ -60,11 +62,11 @@ class SubtitleBase {
   }
 
   getExtent() {
-    return [ this.extentWidth, this.extentHeight ];
+    return [this.extentWidth, this.extentHeight];
   }
 
   setExtent(width, height) {
-    [ this.extentWidth, this.extentHeight ] = [ width, height ];
+    [this.extentWidth, this.extentHeight] = [width, height];
   }
 
   _render(lines, options) {
@@ -77,7 +79,6 @@ class SubtitleBase {
   }
 }
 
-
 class DummySubtitle extends SubtitleBase {
   constructor() {
     super('Off');
@@ -89,41 +90,45 @@ class DummySubtitle extends SubtitleBase {
   }
 }
 
-
 class TextSubtitle extends SubtitleBase {
   constructor(...args) {
     super(...args);
   }
 
   _download() {
-    return (new Promise((resolve, reject) => {
-      fetch(this.url).then(r => r.text()).then(xmlText => {
-        const xml = (new DOMParser()).parseFromString(xmlText, 'text/xml');
+    return new Promise((resolve, reject) => {
+      fetch(this.url)
+        .then(r => r.text())
+        .then(xmlText => {
+          const xml = new DOMParser().parseFromString(xmlText, 'text/xml');
 
-        const LINE_SELECTOR = 'tt > body > div > p';
-        const lines = [].map.call(xml.querySelectorAll(LINE_SELECTOR), (line, id) => {
-          let text = '';
-          let extractTextRecur = (parentNode) => {
-            [].forEach.call(parentNode.childNodes, node => {
-              if (node.nodeType === Node.ELEMENT_NODE)
-                if (node.nodeName.toLowerCase() === 'br') text += ' ';
-                else extractTextRecur(node);
-              else if (node.nodeType === Node.TEXT_NODE)
-                text += node.nodeValue;
-            });
-          };
-          extractTextRecur(line);
+          const LINE_SELECTOR = 'tt > body > div > p';
+          const lines = [].map.call(
+            xml.querySelectorAll(LINE_SELECTOR),
+            (line, id) => {
+              let text = '';
+              let extractTextRecur = parentNode => {
+                [].forEach.call(parentNode.childNodes, node => {
+                  if (node.nodeType === Node.ELEMENT_NODE)
+                    if (node.nodeName.toLowerCase() === 'br') text += ' ';
+                    else extractTextRecur(node);
+                  else if (node.nodeType === Node.TEXT_NODE)
+                    text += node.nodeValue;
+                });
+              };
+              extractTextRecur(line);
 
-          // convert microseconds to seconds
-          const begin = parseInt(line.getAttribute('begin')) / 10000000;
-          const end = parseInt(line.getAttribute('end')) / 10000000;
-          return { id, begin, end, text };
+              // convert microseconds to seconds
+              const begin = parseInt(line.getAttribute('begin')) / 10000000;
+              const end = parseInt(line.getAttribute('end')) / 10000000;
+              return { id, begin, end, text };
+            }
+          );
+
+          this.lines = lines;
+          resolve();
         });
-
-        this.lines = lines;
-        resolve();
-      });
-    }));
+    });
   }
 
   _render(lines, options) {
@@ -138,9 +143,17 @@ class TextSubtitle extends SubtitleBase {
     text.setAttributeNS(null, 'dominant-baseline', 'hanging'); // firefox
     text.setAttributeNS(null, 'paint-order', 'stroke');
     text.setAttributeNS(null, 'stroke', 'black');
-    text.setAttributeNS(null, 'stroke-width', `${1.0 * options.secondaryTextStroke}px`);
+    text.setAttributeNS(
+      null,
+      'stroke-width',
+      `${1.0 * options.secondaryTextStroke}px`
+    );
     text.setAttributeNS(null, 'x', this.extentWidth * 0.5);
-    text.setAttributeNS(null, 'y', this.extentHeight * (options.lowerBaselinePos + 0.01));
+    text.setAttributeNS(
+      null,
+      'y',
+      this.extentHeight * (options.lowerBaselinePos + 0.01)
+    );
     text.setAttributeNS(null, 'opacity', options.secondaryTextOpacity);
     text.style.fontSize = `${fontSize * options.secondaryTextScale}px`;
     text.style.fontFamily = 'Arial, Helvetica';
@@ -151,7 +164,6 @@ class TextSubtitle extends SubtitleBase {
   }
 }
 
-
 class ImageSubtitle extends SubtitleBase {
   constructor(...args) {
     super(...args);
@@ -159,48 +171,79 @@ class ImageSubtitle extends SubtitleBase {
   }
 
   _download() {
-    return (new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const fetchP = fetch(this.url).then(r => r.blob());
-      const unzipP = fetchP.then(zipBlob => (new JSZip()).loadAsync(zipBlob));
+      const unzipP = fetchP.then(zipBlob => new JSZip().loadAsync(zipBlob));
       unzipP.then(zip => {
-        zip.file('manifest_ttml2.xml').async('string').then(xmlText => {
-          const xml = (new DOMParser()).parseFromString(xmlText, 'text/xml');
+        zip
+          .file('manifest_ttml2.xml')
+          .async('string')
+          .then(xmlText => {
+            const xml = new DOMParser().parseFromString(xmlText, 'text/xml');
 
-          // dealing with `ns2:extent`, `ns3:extent`, ...
-          const _getAttributeAnyNS = (domNode, attrName) => {
-            const name = domNode.getAttributeNames().find(n =>
-              (n.split(':').pop().toLowerCase() === attrName));
-            return domNode.getAttribute(name);
-          };
+            // dealing with `ns2:extent`, `ns3:extent`, ...
+            const _getAttributeAnyNS = (domNode, attrName) => {
+              const name = domNode.getAttributeNames().find(
+                n =>
+                  n
+                    .split(':')
+                    .pop()
+                    .toLowerCase() === attrName
+              );
+              return domNode.getAttribute(name);
+            };
 
-          const extent = _getAttributeAnyNS(xml.querySelector('tt'), 'extent');
-          [this.extentWidth, this.extentHeight] = extent.split(' ').map(n => parseInt(n));
+            const extent = _getAttributeAnyNS(
+              xml.querySelector('tt'),
+              'extent'
+            );
+            [this.extentWidth, this.extentHeight] = extent
+              .split(' ')
+              .map(n => parseInt(n));
 
-          const _ttmlTimeToSeconds = (timestamp) => {
-            // e.g., _ttmlTimeToSeconds('00:00:06.005') -> 6.005
-            const regex = /(\d+):(\d+):(\d+(?:\.\d+)?)/;
-            const [hh, mm, sssss] = regex.exec(timestamp).slice(1).map(parseFloat);
-            return (hh * 3600 + mm * 60 + sssss);
-          };
+            const _ttmlTimeToSeconds = timestamp => {
+              // e.g., _ttmlTimeToSeconds('00:00:06.005') -> 6.005
+              const regex = /(\d+):(\d+):(\d+(?:\.\d+)?)/;
+              const [hh, mm, sssss] = regex
+                .exec(timestamp)
+                .slice(1)
+                .map(parseFloat);
+              return hh * 3600 + mm * 60 + sssss;
+            };
 
-          const LINE_SELECTOR = 'tt > body > div';
-          const lines = [].map.call(xml.querySelectorAll(LINE_SELECTOR), (line, id) => {
-            const extentAttrName = line.getAttributeNames().find(n => n.split(':').pop().toLowerCase() === 'extent');
+            const LINE_SELECTOR = 'tt > body > div';
+            const lines = [].map.call(
+              xml.querySelectorAll(LINE_SELECTOR),
+              (line, id) => {
+                const extentAttrName = line.getAttributeNames().find(
+                  n =>
+                    n
+                      .split(':')
+                      .pop()
+                      .toLowerCase() === 'extent'
+                );
 
-            const [width, height] = _getAttributeAnyNS(line, 'extent').split(' ').map(n => parseInt(n));
-            const [left, top] = _getAttributeAnyNS(line, 'origin').split(' ').map(n => parseInt(n));
-            const imageName = line.querySelector('image').getAttribute('src');
-            const begin = _ttmlTimeToSeconds(line.getAttribute('begin'));
-            const end = _ttmlTimeToSeconds(line.getAttribute('end'));
-            return { id, width, height, top, left, imageName, begin, end };
+                const [width, height] = _getAttributeAnyNS(line, 'extent')
+                  .split(' ')
+                  .map(n => parseInt(n));
+                const [left, top] = _getAttributeAnyNS(line, 'origin')
+                  .split(' ')
+                  .map(n => parseInt(n));
+                const imageName = line
+                  .querySelector('image')
+                  .getAttribute('src');
+                const begin = _ttmlTimeToSeconds(line.getAttribute('begin'));
+                const end = _ttmlTimeToSeconds(line.getAttribute('end'));
+                return { id, width, height, top, left, imageName, begin, end };
+              }
+            );
+
+            this.lines = lines;
+            this.zip = zip;
+            resolve();
           });
-
-          this.lines = lines;
-          this.zip = zip;
-          resolve();
-        });
       });
-    }));
+    });
   }
 
   _render(lines, options) {
@@ -209,38 +252,42 @@ class ImageSubtitle extends SubtitleBase {
     const upperBaseline = this.extentHeight * options.upperBaselinePos;
     const lowerBaseline = this.extentHeight * options.lowerBaselinePos;
     return lines.map(line => {
-      const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-      this.zip.file(line.imageName).async('blob').then(blob => {
-        const { left, top, width, height } = line;
-        const [ newWidth, newHeight ] = [ width * scale, height * scale ];
-        const newLeft = (left + 0.5 * (width - newWidth));
-        const newTop = (top <= centerLine) ? (upperBaseline) : (lowerBaseline);
+      const img = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'image'
+      );
+      this.zip
+        .file(line.imageName)
+        .async('blob')
+        .then(blob => {
+          const { left, top, width, height } = line;
+          const [newWidth, newHeight] = [width * scale, height * scale];
+          const newLeft = left + 0.5 * (width - newWidth);
+          const newTop = top <= centerLine ? upperBaseline : lowerBaseline;
 
-        const src = URL.createObjectURL(blob);
-        img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', src);
-        img.setAttributeNS(null, 'width', newWidth);
-        img.setAttributeNS(null, 'height', newHeight);
-        img.setAttributeNS(null, 'x', newLeft);
-        img.setAttributeNS(null, 'y', newTop);
-        img.setAttributeNS(null, 'opacity', options.secondaryImageOpacity);
-        img.addEventListener('load', () => {
-          URL.revokeObjectURL(src);
+          const src = URL.createObjectURL(blob);
+          img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', src);
+          img.setAttributeNS(null, 'width', newWidth);
+          img.setAttributeNS(null, 'height', newHeight);
+          img.setAttributeNS(null, 'x', newLeft);
+          img.setAttributeNS(null, 'y', newTop);
+          img.setAttributeNS(null, 'opacity', options.secondaryImageOpacity);
+          img.addEventListener('load', () => {
+            URL.revokeObjectURL(src);
+          });
         });
-      });
       return img;
     });
   }
 }
 
-
 // -----------------------------------------------------------------------------
-
 
 class SubtitleFactory {
   // track: manifest.textTracks[...]
   static build(track) {
     const isImageBased = track.downloadables.some(d => d.isImage);
-    const isCaption = (track.trackType === 'CLOSEDCAPTIONS');
+    const isCaption = track.trackType === 'CLOSEDCAPTIONS';
     const lang = track.language + (isCaption ? ' [CC]' : '');
     const bcp47 = track.bcp47;
 
@@ -270,21 +317,20 @@ class SubtitleFactory {
   }
 }
 
-
 // textTracks: manifest.textTracks
-const buildSubtitleList = (textTracks) => {
+const buildSubtitleList = textTracks => {
   const dummy = new DummySubtitle();
   dummy.activate();
 
   // sorted by language in alphabetical order (to align with official UI)
-  const subs = textTracks.filter(t => !t.isNone)
-    .map(t => SubtitleFactory.build(t)).sort((a, b) => a.lang.localeCompare(b.lang));
+  const subs = textTracks
+    .filter(t => !t.isNone)
+    .map(t => SubtitleFactory.build(t))
+    .sort((a, b) => a.lang.localeCompare(b.lang));
   return [dummy].concat(subs);
 };
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 const SUBTITLE_LIST_CLASSNAME = 'nflxmultisubs-subtitle-list';
 class SubtitleMenu {
@@ -312,11 +358,10 @@ class SubtitleMenu {
       let item = document.createElement('li');
       item.classList.add('track');
       if (sub.active) {
-        const icon = (sub.state === 'LOADING') ? loadingIcon : checkIcon;
+        const icon = sub.state === 'LOADING' ? loadingIcon : checkIcon;
         item.classList.add('selected');
         item.innerHTML = `${icon}${sub.lang}`;
-      }
-      else {
+      } else {
         item.innerHTML = sub.lang;
         item.addEventListener('click', () => {
           activateSubtitle(id);
@@ -327,13 +372,13 @@ class SubtitleMenu {
   }
 }
 
-
 // -----------------------------------------------------------------------------
 
-
-const isPopupMenuElement = (node) => {
-  return (node.nodeName.toLowerCase() === 'div') &&
-    (node.classList.contains('audio-subtitle-controller'));
+const isPopupMenuElement = node => {
+  return (
+    node.nodeName.toLowerCase() === 'div' &&
+    node.classList.contains('audio-subtitle-controller')
+  );
 };
 
 // FIXME: can we disconnect this observer once our menu is injected ?
@@ -360,32 +405,37 @@ const bodyObserver = new MutationObserver(mutations => {
     });
   });
 });
-const observerOptions = {attributes: true, subtree: true, childList: true, characterData: true, };
+const observerOptions = {
+  attributes: true,
+  subtree: true,
+  childList: true,
+  characterData: true
+};
 bodyObserver.observe(document.body, observerOptions);
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-activateSubtitle = (id) => {
-  gSubtitles.forEach(sub => sub.deactivate());
+activateSubtitle = id => {
   const sub = gSubtitles[id];
   if (sub) {
+    gSubtitles.forEach(sub => sub.deactivate());
     sub.activate().then(() => gSubtitleMenu && gSubtitleMenu.render());
   }
   gSubtitleMenu && gSubtitleMenu.render();
 };
 
-const buildSecondarySubtitleElement = (options) => {
+const buildSecondarySubtitleElement = options => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.classList.add('nflxmultisubs-subtitle-svg');
-  svg.style = 'position:absolute; width:100%; top:0; bottom:0; left:0; right:0;';
+  svg.style =
+    'position:absolute; width:100%; top:0; bottom:0; left:0; right:0;';
   svg.setAttributeNS(null, 'width', '100%');
   svg.setAttributeNS(null, 'height', '100%');
 
   const padding = document.createElement('div');
   padding.classList.add('nflxmultisubs-subtitle-padding');
-  padding.style = `display:block; content:' '; width:100%; padding-top:${gVideoRatio*100}%;`;
+  padding.style = `display:block; content:' '; width:100%; padding-top:${gVideoRatio *
+    100}%;`;
 
   const container = document.createElement('div');
   container.classList.add('nflxmultisubs-subtitle-container');
@@ -395,25 +445,26 @@ const buildSecondarySubtitleElement = (options) => {
 
   const wrapper = document.createElement('div');
   wrapper.classList.add('nflxmultisubs-subtitle-wrapper');
-  wrapper.style = 'position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; display:flex; align-items:center;';
+  wrapper.style =
+    'position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; display:flex; align-items:center;';
   wrapper.appendChild(container);
   return wrapper;
 };
 
-
 // -----------------------------------------------------------------------------
 
-
 class PrimaryImageTransformer {
-  constructor() {
-  }
+  constructor() {}
 
   transform(svgElem, controlsActive, forced) {
     const selector = forced ? 'image' : 'image:not(.nflxmultisubs-scaled)';
     const images = svgElem.querySelectorAll(selector);
     if (images.length > 0) {
       const viewBox = svgElem.getAttributeNS(null, 'viewBox');
-      const [ extentWidth, extentHeight ] = viewBox.split(' ').slice(-2).map(n => parseInt(n));
+      const [extentWidth, extentHeight] = viewBox
+        .split(' ')
+        .slice(-2)
+        .map(n => parseInt(n));
 
       // TODO: if there's no secondary subtitle, center the primary on baseline
       const options = gRenderOptions;
@@ -425,22 +476,43 @@ class PrimaryImageTransformer {
 
       [].forEach.call(images, img => {
         img.classList.add('nflxmultisubs-scaled');
-        const left = parseInt(img.getAttributeNS(null, 'data-orig-x') || img.getAttributeNS(null, 'x'));
-        const top = parseInt(img.getAttributeNS(null, 'data-orig-y') || img.getAttributeNS(null, 'y'));
-        const width = parseInt(img.getAttributeNS(null, 'data-orig-width') || img.getAttributeNS(null, 'width'));
-        const height = parseInt(img.getAttributeNS(null, 'data-orig-height') || img.getAttributeNS(null, 'height'));
+        const left = parseInt(
+          img.getAttributeNS(null, 'data-orig-x') ||
+            img.getAttributeNS(null, 'x')
+        );
+        const top = parseInt(
+          img.getAttributeNS(null, 'data-orig-y') ||
+            img.getAttributeNS(null, 'y')
+        );
+        const width = parseInt(
+          img.getAttributeNS(null, 'data-orig-width') ||
+            img.getAttributeNS(null, 'width')
+        );
+        const height = parseInt(
+          img.getAttributeNS(null, 'data-orig-height') ||
+            img.getAttributeNS(null, 'height')
+        );
 
-        const attribs = [['x', left], ['y', top], ['width', width], ['height', height]];
+        const attribs = [
+          ['x', left],
+          ['y', top],
+          ['width', width],
+          ['height', height]
+        ];
         attribs.forEach(p => {
-          const attrName = `data-orig-${p[0]}`, attrValue = p[1];
+          const attrName = `data-orig-${p[0]}`,
+            attrValue = p[1];
           if (!img.getAttributeNS(null, attrName)) {
             img.setAttributeNS(null, attrName, attrValue);
           }
         });
 
-        const [ newWidth, newHeight ] = [ width * scale, height * scale ];
-        const newLeft = (left + 0.5 * (width - newWidth));
-        const newTop = (top <= centerLine) ? (upperBaseline - newHeight) : (lowerBaseline - newHeight);
+        const [newWidth, newHeight] = [width * scale, height * scale];
+        const newLeft = left + 0.5 * (width - newWidth);
+        const newTop =
+          top <= centerLine
+            ? upperBaseline - newHeight
+            : lowerBaseline - newHeight;
         img.setAttributeNS(null, 'width', newWidth);
         img.setAttributeNS(null, 'height', newHeight);
         img.setAttributeNS(null, 'x', newLeft);
@@ -450,7 +522,6 @@ class PrimaryImageTransformer {
     }
   }
 }
-
 
 class PrimaryTextTransformer {
   constructor() {
@@ -463,7 +534,8 @@ class PrimaryTextTransformer {
       // let's use `<style>` + `!imporant` to outrun the offical player...
       const wrapper = document.createElement('div');
       wrapper.classList.add('nflxmultisubs-primary-wrapper');
-      wrapper.style = 'position:absolute; width:100%; height:100%; top:0; left:0;';
+      wrapper.style =
+        'position:absolute; width:100%; height:100%; top:0; left:0;';
 
       const styleElem = document.createElement('style');
       wrapper.appendChild(styleElem);
@@ -493,7 +565,7 @@ class PrimaryTextTransformer {
     const options = gRenderOptions;
     const opacity = options.primaryTextOpacity;
     const scale = options.primaryTextScale;
-    const newFontSize = (fontSize * scale);
+    const newFontSize = fontSize * scale;
     const styleText = `.player-timedtext-text-container span {
         font-size: ${newFontSize}px !important;
         opacity: ${opacity};
@@ -501,26 +573,28 @@ class PrimaryTextTransformer {
     style.textContent = styleText;
 
     const rect = divElem.getBoundingClientRect();
-    const [ extentWidth, extentHeight ] = [ rect.width, rect.height ];
+    const [extentWidth, extentHeight] = [rect.width, rect.height];
 
     const lowerBaseline = extentHeight * options.lowerBaselinePos;
     const { left, top, width, height } = container.getBoundingClientRect();
-    const newLeft = ((extentWidth * 0.5) - (width * 0.5));
-    let newTop = (lowerBaseline - height);
+    const newLeft = extentWidth * 0.5 - width * 0.5;
+    let newTop = lowerBaseline - height;
 
     // FIXME: dirty transform & magic offets
     // we out run the official player, so the primary text-based subtitles
     // does not move automatically when the navs are active
-    newTop += (controlsActive ? -120 : 0);
+    newTop += controlsActive ? -120 : 0;
 
-    style.textContent = styleText + '\n' + `
+    style.textContent =
+      styleText +
+      '\n' +
+      `
       .player-timedtext-text-container {
         top: ${newTop}px !important;
         left: ${newLeft}px !important;
       }`;
   }
 }
-
 
 class RendererLoop {
   constructor(video) {
@@ -550,8 +624,7 @@ class RendererLoop {
     try {
       this._loop();
       this.isRunning && window.requestAnimationFrame(this.loop.bind(this));
-    }
-    catch (err) {
+    } catch (err) {
       console.error('Fatal: ', err);
     }
   }
@@ -567,8 +640,7 @@ class RendererLoop {
 
     // this script may be loaded while user's at the movie list page,
     // thus if there's no video playing, we can end the renderer loop
-    if (!this.videoElem &&
-        !(/netflix\.com\/watch/i.test(window.location.href))) {
+    if (!this.videoElem && !/netflix\.com\/watch/i.test(window.location.href)) {
       this._disconnect();
       this.stop();
       return;
@@ -603,29 +675,38 @@ class RendererLoop {
     // FIXME: renderer loop shouldn't be responsible for this
     if (BROWSER === 'chrome') {
       if (gMsgPort && gMsgPort.disconnect()) gMsgPort = null;
-    }
-    else if (BROWSER === 'firefox') {
-      window.postMessage({
-        namespace: 'nflxmultisubs',
-        action: 'disconnect'
-      }, '*');
+    } else if (BROWSER === 'firefox') {
+      window.postMessage(
+        {
+          namespace: 'nflxmultisubs',
+          action: 'disconnect'
+        },
+        '*'
+      );
     }
   }
 
   _getControlsActive() {
     // FIXME: better solution to handle different versions of Netflix web player UI
     // "Neo Style" refers to the newer version as in 2018/07
-    let controlsElem = document.querySelector('.controls'), neoStyle = false;
+    let controlsElem = document.querySelector('.controls'),
+      neoStyle = false;
     if (!controlsElem) {
       controlsElem = document.querySelector('.PlayerControlsNeo__layout');
-      if (!controlsElem) { return false; }
+      if (!controlsElem) {
+        return false;
+      }
       neoStyle = true;
     }
     // elevate the navs' z-index (to be on top of our subtitles)
-    if (!controlsElem.style.zIndex) { controlsElem.style.zIndex = 3; }
+    if (!controlsElem.style.zIndex) {
+      controlsElem.style.zIndex = 3;
+    }
 
     if (neoStyle) {
-      return !controlsElem.classList.contains('PlayerControlsNeo__layout--inactive');
+      return !controlsElem.classList.contains(
+        'PlayerControlsNeo__layout--inactive'
+      );
     }
     return controlsElem.classList.contains('active');
   }
@@ -633,7 +714,9 @@ class RendererLoop {
   // @returns {boolean} Successed?
   _appendSubtitleWrapper() {
     if (!this.subtitleWrapperElem || !this.subtitleWrapperElem.parentNode) {
-      const playerContainerElem = document.querySelector('.nf-player-container');
+      const playerContainerElem = document.querySelector(
+        '.nf-player-container'
+      );
       if (!playerContainerElem) return false;
       this.subtitleWrapperElem = buildSecondarySubtitleElement(gRenderOptions);
       playerContainerElem.appendChild(this.subtitleWrapperElem);
@@ -646,7 +729,9 @@ class RendererLoop {
     // NOTE: we cannot put `primaryImageSubSvg` into instance state,
     // because there are multiple instance of the SVG and they're switched
     // when the langauge of primary subtitles is switched.
-    const primaryImageSubSvg = document.querySelector('.image-based-timed-text svg');
+    const primaryImageSubSvg = document.querySelector(
+      '.image-based-timed-text svg'
+    );
     if (primaryImageSubSvg) {
       this.primaryImageTransformer.transform(primaryImageSubSvg, active, dirty);
     }
@@ -663,32 +748,43 @@ class RendererLoop {
     }
     const seconds = this.videoElem.currentTime;
     const sub = gSubtitles.find(sub => sub.active);
-    if (!sub) { return; }
+    if (!sub) {
+      return;
+    }
 
     if (sub instanceof TextSubtitle) {
       const rect = this.videoElem.getBoundingClientRect();
       sub.setExtent(rect.width, rect.height);
     }
 
-    const renderedElems = sub.render(seconds, gRenderOptions, !!this.isRenderDirty);
+    const renderedElems = sub.render(
+      seconds,
+      gRenderOptions,
+      !!this.isRenderDirty
+    );
     if (renderedElems) {
-      const [ extentWidth, extentHeight ] = sub.getExtent();
+      const [extentWidth, extentHeight] = sub.getExtent();
       if (extentWidth && extentHeight) {
-        this.subSvg.setAttribute('viewBox', `0 0 ${extentWidth} ${extentHeight}`);
+        this.subSvg.setAttribute(
+          'viewBox',
+          `0 0 ${extentWidth} ${extentHeight}`
+        );
       }
-      [].forEach.call(this.subSvg.querySelectorAll('*'), elem => elem.parentNode.removeChild(elem));
+      [].forEach.call(this.subSvg.querySelectorAll('*'), elem =>
+        elem.parentNode.removeChild(elem)
+      );
       renderedElems.forEach(elem => this.subSvg.appendChild(elem));
     }
   }
 }
 
-
-window.addEventListener('resize', (evt) => {
+window.addEventListener('resize', evt => {
   gRendererLoop && gRendererLoop.setRenderDirty();
-  console.log('Resize:',
-    `${window.innerWidth}x${window.innerHeight} (${evt.timeStamp})`);
+  console.log(
+    'Resize:',
+    `${window.innerWidth}x${window.innerHeight} (${evt.timeStamp})`
+  );
 });
-
 
 // -----------------------------------------------------------------------------
 
@@ -738,26 +834,26 @@ class NflxMultiSubsManager {
           gMsgPort = chrome.runtime.connect(extensionId);
           console.log(`Linked: ${extensionId}`);
 
-          gMsgPort.onMessage.addListener((msg) => {
+          gMsgPort.onMessage.addListener(msg => {
             if (msg.settings) {
               gRenderOptions = Object.assign({}, msg.settings);
               gRendererLoop && gRendererLoop.setRenderDirty();
             }
           });
-        }
-        catch (err) {
+        } catch (err) {
           console.warn('Error: cannot talk to background,', err);
         }
       }
-    }
-    else {
+    } else {
       try {
-        window.postMessage({
-          namespace: 'nflxmultisubs',
-          action: 'connect',
-        }, '*');
-      }
-      catch (err) {
+        window.postMessage(
+          {
+            namespace: 'nflxmultisubs',
+            action: 'connect'
+          },
+          '*'
+        );
+      } catch (err) {
         console.warn('Error: cannot talk to background,', err);
       }
     }
@@ -770,105 +866,116 @@ class NflxMultiSubsManager {
       console.log(`Player: loaded=${loadedPlayerVersion}`);
 
       if (loadedPlayerVersion !== originalPlayerVersion) {
-        console.warn(`Unoffcial player detected:`,
-          `presumed=${originalPlayerVersion}, loaded=${loadedPlayerVersion}`);
+        console.warn(
+          `Unoffcial player detected:`,
+          `presumed=${originalPlayerVersion}, loaded=${loadedPlayerVersion}`
+        );
       }
-    }
-    catch (err) {
+    } catch (err) {
       console.warn('Error:', err);
     }
 
     try {
       console.log(`Manifest: ${manifest.movieId}`);
-    }
-    catch (err) {
+    } catch (err) {
       console.warn('Error:', err);
     }
 
     // Sometime the movieId in URL may be different to the actually playing manifest
     // Thus we also need to check the player DOM tree...
-    this.busyWaitVideoElement().then(video => {
-      try {
-        const movieIdInUrl = /^\/watch\/(\d+)/.exec(window.location.pathname)[1];
-        console.log(`Note: movieIdInUrl=${movieIdInUrl}`);
-        let playingManifest = (manifest.movieId.toString() === movieIdInUrl);
-
-        if (!playingManifest) {
-          // magic! ... div.VideoContainer > div#12345678 > video[src=blob:...]
-          const movieIdInPlayerNode = video.parentNode.id;
-          console.log(`Note: movieIdInPlayerNode=${movieIdInPlayerNode}`);
-          playingManifest = movieIdInPlayerNode.includes(manifest.movieId.toString());
-        }
-
-        if (!playingManifest) {
-          console.log(`Ignored: manifest ${manifest.movieId} not playing`);
-          // Ignore but store it.
-          this.manifestList.push(manifest);
-          return;
-        }
-
-        const movieChanged = (manifest.movieId !== this.lastMovieId);
-        if (!movieChanged) {
-          console.log(`Ignored: manifest ${manifest.movieId} loaded yet`);
-          return;
-        }
-
-        this.lastMovieId = manifest.movieId;
-        gSubtitles = buildSubtitleList(manifest.textTracks);
-
-        gSubtitleMenu = new SubtitleMenu();
-        gSubtitleMenu.render();
-
-        // select subtitle to match the default audio track
+    this.busyWaitVideoElement()
+      .then(video => {
         try {
-          const defaultAudioTrack = manifest.audioTracks.find(t => manifest.defaultMedia.indexOf(t.id) >= 0);
-          if (defaultAudioTrack) {
-            const bcp47 = defaultAudioTrack.bcp47;
-            let autoSubtitleId = gSubtitles.findIndex(t => (t.bcp47 === bcp47 && t.isCaption));
-            autoSubtitleId = (autoSubtitleId < 0) ? gSubtitles.findIndex(t => t.bcp47 === bcp47) : autoSubtitleId;
-            if (autoSubtitleId >= 0) {
-              console.log(`Subtitle "${bcp47}" auto-enabled to match audio`);
-              activateSubtitle(autoSubtitleId);
-            }
+          const movieIdInUrl = /^\/watch\/(\d+)/.exec(
+            window.location.pathname
+          )[1];
+          console.log(`Note: movieIdInUrl=${movieIdInUrl}`);
+          let playingManifest = manifest.movieId.toString() === movieIdInUrl;
+
+          if (!playingManifest) {
+            // magic! ... div.VideoContainer > div#12345678 > video[src=blob:...]
+            const movieIdInPlayerNode = video.parentNode.id;
+            console.log(`Note: movieIdInPlayerNode=${movieIdInPlayerNode}`);
+            playingManifest = movieIdInPlayerNode.includes(
+              manifest.movieId.toString()
+            );
           }
-        }
-        catch (err) {
-          console.error('Default audio track not found, ', err);
+
+          if (!playingManifest) {
+            console.log(`Ignored: manifest ${manifest.movieId} not playing`);
+            // Ignore but store it.
+            this.manifestList.push(manifest);
+            return;
+          }
+
+          const movieChanged = manifest.movieId !== this.lastMovieId;
+          if (!movieChanged) {
+            console.log(`Ignored: manifest ${manifest.movieId} loaded yet`);
+            return;
+          }
+
+          this.lastMovieId = manifest.movieId;
+          gSubtitles = buildSubtitleList(manifest.textTracks);
+
+          gSubtitleMenu = new SubtitleMenu();
+          gSubtitleMenu.render();
+
+          // select subtitle to match the default audio track
+          try {
+            const defaultAudioTrack = manifest.audioTracks.find(
+              t => manifest.defaultMedia.indexOf(t.id) >= 0
+            );
+            if (defaultAudioTrack) {
+              const bcp47 = defaultAudioTrack.bcp47;
+              let autoSubtitleId = gSubtitles.findIndex(
+                t => t.bcp47 === bcp47 && t.isCaption
+              );
+              autoSubtitleId =
+                autoSubtitleId < 0
+                  ? gSubtitles.findIndex(t => t.bcp47 === bcp47)
+                  : autoSubtitleId;
+              if (autoSubtitleId >= 0) {
+                console.log(`Subtitle "${bcp47}" auto-enabled to match audio`);
+                activateSubtitle(autoSubtitleId);
+              }
+            }
+          } catch (err) {
+            console.error('Default audio track not found, ', err);
+          }
+
+          // retrieve video ratio
+          try {
+            let { width, height } = manifest.videoTracks[0].downloadables[0];
+            gVideoRatio = height / width;
+          } catch (err) {
+            console.error('Video ratio not available, ', err);
+          }
+        } catch (err) {
+          console.error('Fatal: ', err);
         }
 
-        // retrieve video ratio
-        try {
-          let { width, height } = manifest.videoTracks[0].downloadables[0];
-          gVideoRatio = height / width;
+        if (gRendererLoop) {
+          // just for safety
+          gRendererLoop.stop();
+          gRendererLoop = null;
+          console.log('Terminated: old renderer loop');
         }
-        catch (err) {
-          console.error('Video ratio not available, ', err);
+
+        if (!gRendererLoop) {
+          gRendererLoop = new RendererLoop(video);
+          gRendererLoop.start();
+          console.log('Started: renderer loop');
         }
-      }
-      catch (err) {
+
+        // detect for newer version of Netflix web player UI
+        const hasNeoStyleControls = !!document.querySelector(
+          '[class*=PlayerControlsNeo]'
+        );
+        console.log(`hasNeoStyleControls: ${hasNeoStyleControls}`);
+      })
+      .catch(err => {
         console.error('Fatal: ', err);
-      }
-
-
-      if (gRendererLoop) {
-        // just for safety
-        gRendererLoop.stop();
-        gRendererLoop = null;
-        console.log('Terminated: old renderer loop');
-      }
-
-      if (!gRendererLoop) {
-        gRendererLoop = new RendererLoop(video);
-        gRendererLoop.start();
-        console.log('Started: renderer loop');
-      }
-
-      // detect for newer version of Netflix web player UI
-      const hasNeoStyleControls = !!document.querySelector('[class*=PlayerControlsNeo]');
-      console.log(`hasNeoStyleControls: ${hasNeoStyleControls}`);
-    }).catch(err => {
-      console.error('Fatal: ', err);
-    });
+      });
   }
 
   rendererLoopDestroy() {
@@ -876,12 +983,14 @@ class NflxMultiSubsManager {
     if (!isInPlayerPage) return;
 
     const manifestInUrl = /^\/watch\/(\d+)/.exec(window.location.pathname)[1];
-    const found = this.manifestList.find(manifest => manifest.movieId.toString() === manifestInUrl);
+    const found = this.manifestList.find(
+      manifest => manifest.movieId.toString() === manifestInUrl
+    );
     if (found) {
-      console.log('rendererLoop destroyed to prepare next episode.')
+      console.log('rendererLoop destroyed to prepare next episode.');
       this.updateManifest(found);
     } else {
-      console.error('rendererLoop destroyed but no valid manifest.')
+      console.error('rendererLoop destroyed but no valid manifest.');
     }
   }
 }
@@ -894,20 +1003,41 @@ window.__NflxMultiSubs = new NflxMultiSubsManager();
 // window.postMessage().
 
 if (BROWSER === 'firefox') {
-  window.addEventListener('message', evt => {
-    if (!evt.data || evt.data.namespace !== 'nflxmultisubs') return;
+  window.addEventListener(
+    'message',
+    evt => {
+      if (!evt.data || evt.data.namespace !== 'nflxmultisubs') return;
 
-    if (evt.data.action === 'apply-settings' && evt.data.settings) {
-      gRenderOptions = Object.assign({}, evt.data.settings);
-      gRendererLoop && gRendererLoop.setRenderDirty();
-    }
-  }, false);
+      if (evt.data.action === 'apply-settings' && evt.data.settings) {
+        gRenderOptions = Object.assign({}, evt.data.settings);
+        gRendererLoop && gRendererLoop.setRenderDirty();
+      }
+    },
+    false
+  );
 }
 
-
 // =============================================================================
-
 
 // control video playback rate
 const playbackRateController = new PlaybackRateController();
 playbackRateController.activate();
+
+/**
+ * 添加 keyboard event ，支援使用鍵盤數字鍵切換副字幕
+ * 預設數字鍵 0 為關閉 副字幕
+ * 副字幕順序由字幕列表選項上到下分配數字鍵 1 ~ 9
+ * 48~57  為 英文字母上方數字鍵 keycode
+ * 96~105 為 九宮格數字鍵 keycode
+ */
+
+window.addEventListener('keyup', e => {
+  let keyCode =
+    (e.keyCode >= 48 && e.keyCode <= 57) ||
+    (e.keyCode >= 96 && e.keyCode <= 105)
+      ? e.key
+      : null;
+  if (keyCode) {
+    activateSubtitle(keyCode);
+  }
+});
