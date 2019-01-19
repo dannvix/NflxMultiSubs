@@ -1,3 +1,13 @@
+> **This project has been deprecated**
+
+> **This extension does not work since Netflix revise their player on 2019/01/19. Sadly we will not maintain this extension anymore, and we also removed this extension from Chrome Web Store and Firefox Add-ons. Thank you very much for all the supports ever.**
+
+> **PS. This extension is open-sourced under MIT license. Glad to see anyone improves it and make it available again.**
+
+
+----
+
+
 <i align="center"><a href="README_en.md">English</a>, <a href="README.md">中文</a></i>
 
 
@@ -6,8 +16,8 @@
 Best ever Chrome/Firefox extension to unleash bilingual subtitles on Netflix!
 
 
-[![Download on Chrome Web Store](docs/chrome-webstore-badge58.png?raw=true)](https://chrome.google.com/webstore/detail/pjhnilfooknlkdonmjnleaomamfehkli/)
-[![Download on Firefox Add-ons](docs/firefox-addons-badge58.png?raw=true)](https://addons.mozilla.org/firefox/addon/nflxmultisubs/)
+[![Download on Chrome Web Store](docs/chrome-webstore-badge58.png?raw=true)](#)
+[![Download on Firefox Add-ons](docs/firefox-addons-badge58.png?raw=true)](#)
 
 
 
