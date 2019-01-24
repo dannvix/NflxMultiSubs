@@ -2,6 +2,8 @@
 
 > **Netflix 於 2019 年 01 年 19 日改版播放器程式後，本套件功能已全然失效。開發者也不再使用 Chrome 與 Firefox 觀賞 Netflix，因此滿懷遺憾地宣佈本套件即日起停止維護，並已經從 Chrome Web Store 和 Firefox Add-ons 下架。由衷感謝曾經支持、提出建議與用本套件的每位使用者！本套件為開放原始碼專案，在符合 MIT 授權的範圍內，歡迎有志之士改進後包裝上架。**
 
+> **2019/01/22 更新：有位開發者 [@hobodrifterdavid](https://github.com/hobodrifterdavid) 志願接手 Chrome 版本維護工作，所以我們將 NflxMultiSubs 在 Chrome Web Store 的發佈權轉讓給他，g如此一來既有的使用者可以持續更新 (而不需重新安裝)，詳見 [#36](https://github.com/dannvix/NflxMultiSubs/issues/36) 下方的討論；若您對於更換開發者有顧慮，請立刻從 Chrome 移除 NflxMultiSubs。
+
 > **註：如果您曾經使用 NflxMultiSubs 來輔助語言學習，有人告訴我 [Language Learning with Netflix](http://languagelearningwithnetflix.com/) 這個專案或許可以幫助您，參考看看。**
 
 
