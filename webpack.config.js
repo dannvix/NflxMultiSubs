@@ -52,6 +52,7 @@ const configs = browsers.map(browser => {
         },
       ]),
       new webpack.DefinePlugin({
+        VERSION: JSON.stringify(process.env.npm_package_version),
         BROWSER: JSON.stringify(browser),
       }),
     ],

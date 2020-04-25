@@ -942,11 +942,13 @@ const extractMovieIdFromUrl = () => {
 
 class NflxMultiSubsManager {
   constructor() {
+    this.version = VERSION;
     this.lastMovieId = undefined;
     this.playerUrl = undefined;
     this.playerVersion = undefined;
     this.busyWaitTimeout = 100000; // ms
     this.manifestManager = new ManifestManagerInMemory();
+    console.log(`Version: ${this.version}`)
   }
 
   busyWaitVideoElement() {
