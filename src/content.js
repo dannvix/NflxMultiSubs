@@ -1,15 +1,10 @@
 const console = require('./console');
 
 
-// updated when we got `<script src...>` in the observer
-let origPlayerUrl, origPlayerVersion;
-
 window.addEventListener('load', () => {
   let scriptElem = document.createElement('script');
   scriptElem.setAttribute('type', 'text/javascript');
   scriptElem.textContent = `(() => {
-      window.__originalPlayerUrl = ${JSON.stringify(origPlayerUrl)};
-      window.__originalPlayerVersion = ${JSON.stringify(origPlayerVersion)};
       window.__nflxMultiSubsExtId = ${JSON.stringify(chrome.runtime.id)};
     })();`;
   document.body.appendChild(scriptElem);
