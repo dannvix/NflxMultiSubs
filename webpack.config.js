@@ -1,9 +1,8 @@
 const path = require('path');
 
 const webpack = require('webpack');
-const CleanWebpackPlugin = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const UglifyJsWebpackPlugin = require('uglifyjs-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 
 // =============================================================================
@@ -36,7 +35,7 @@ const configs = browsers.map(browser => {
     },
 
     plugins: [
-      new CleanWebpackPlugin(buildDir),
+      new CleanWebpackPlugin(),
       new CopyWebpackPlugin([
         {
           from: path.join(kSourceDir, 'manifest.json'),
@@ -52,16 +51,6 @@ const configs = browsers.map(browser => {
           flatten: true,
         },
       ]),
-      new UglifyJsWebpackPlugin({
-        // ref. https://github.com/webpack/webpack/issues/6567#issuecomment-369554250
-        uglifyOptions: {
-          ecma: 8,
-          compress: {
-            inline: 1,
-          },
-          parallel: true,
-        },
-      }),
       new webpack.DefinePlugin({
         BROWSER: JSON.stringify(browser),
       }),
