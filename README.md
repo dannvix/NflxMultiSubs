@@ -1,4 +1,4 @@
-<i align="center"><a href="README_en.md">English</a>, <a href="README.md">中文</a></i>
+<p align="center"><a href="README_en.md">English</a>, <a href="README.md">中文</a></p>
 
 
 <img src="docs/icon.png?raw=true" height="48"> NflxMultiSubs
@@ -6,7 +6,7 @@
 Best ever Chrome/Firefox extension to unleash bilingual subtitles on Netflix!
 全球首款支援 Netflix 全語言雙字幕的 Chrome/Firefox 擴充套件，提供您更佳的觀影體驗！
 
-[![Download on Chrome Web Store](docs/chrome-webstore-badge58.png?raw=true)](#)
+[![Download on Chrome Web Store](docs/chrome-webstore-badge58.png?raw=true)](https://chrome.google.com/webstore/detail/pjhnilfooknlkdonmjnleaomamfehkli/)
 
 
 
