@@ -4,8 +4,6 @@
   "author": "Dan Chen",
 
   "permissions": [
-    "webRequest",
-    "webRequestBlocking",
     "storage",
     "https://www.netflix.com/watch/*",
     "https://assets.nflxext.com/*"
