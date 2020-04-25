@@ -1,15 +1,15 @@
 const kDefaultSettings = require('./default-settings');
 
 
-chrome.webRequest.onBeforeRequest.addListener(details => {
-  console.log(`Denying: ${details.url}`);
-  return { cancel: true, };
-},
-{
-  urls: ['https://assets.nflxext.com/*cadmium-playercore*'],
-  types: ['script'],
-},
-['blocking']);
+// chrome.webRequest.onBeforeRequest.addListener(details => {
+//   console.log(`Denying: ${details.url}`);
+//   return { cancel: true, };
+// },
+// {
+//   urls: ['https://assets.nflxext.com/*cadmium-playercore*'],
+//   types: ['script'],
+// },
+// ['blocking']);
 
 
 ////////////////////////////////////////////////////////////////////////////////

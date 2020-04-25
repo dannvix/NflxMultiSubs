@@ -5,6 +5,24 @@ const PlaybackRateController = require('./playback-rate-controller');
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// Hook JSON.parse() and attempt to intercept the manifest
+// For cadmium-playercore-6.0022.710.042.js and later
+const hookJsonParseAndAddCallback = function(_window) {
+  const _parse = JSON.parse;
+  _window.JSON.parse = (...args) => {
+      const result = _parse.call(JSON, ...args);
+      if (result && result.result && result.result.movieId) {
+          const movieId = result.result.movieId
+          console.log(`Intercepted manifest ${movieId}`);
+          window.__NflxMultiSubs.updateManifest(result.result);
+      }
+      return result;
+  };
+};
+hookJsonParseAndAddCallback(window);
+
+////////////////////////////////////////////////////////////////////////////////
+
 // global states
 let gSubtitles = [],
   gSubtitleMenu;
