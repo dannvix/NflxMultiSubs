@@ -50,12 +50,12 @@ let gRenderOptions = Object.assign({}, kDefaultSettings);
 ////////////////////////////////////////////////////////////////////////////////
 
 class SubtitleBase {
-  constructor(lang, bcp47, url) {
+  constructor(lang, bcp47, urls) {
     this.state = 'GENESIS';
     this.active = false;
     this.lang = lang;
     this.bcp47 = bcp47;
-    this.url = url;
+    this.urls = urls;
     this.extentWidth = undefined;
     this.extentHeight = undefined;
     this.lines = undefined;
@@ -104,13 +104,33 @@ class SubtitleBase {
     [this.extentWidth, this.extentHeight] = [width, height];
   }
 
+  _download() {
+    if (!this.urls) return Promise.resolve();
+
+    console.log('Selecting fastest server, candidates: ',
+      this.urls.map(u => u.substr(0, 24)));
+
+    let download_started = false;
+    return new Promise((resolve, reject) => {
+      this.urls.forEach(url => {
+        fetch(new Request(url), {method: 'HEAD'}).then(r => {
+          if (download_started) return;
+
+          download_started = true;
+          console.log('Fastest: ', url.substr(0, 24));
+          this._extract(fetch(url)).then(() => resolve());
+        });
+      });
+    });
+  }
+
   _render(lines, options) {
     // implemented in derived class
   }
 
-  _download() {
+  _extract(fetchPromise) {
+    // extract contents downloaded from fetch()
     // implemented in derived class
-    return Promise.resolve();
   }
 }
 
@@ -130,9 +150,9 @@ class TextSubtitle extends SubtitleBase {
     super(...args);
   }
 
-  _download() {
+  _extract(fetchPromise) {
     return new Promise((resolve, reject) => {
-      fetch(this.url)
+      fetchPromise
         .then(r => r.text())
         .then(xmlText => {
           const xml = new DOMParser().parseFromString(xmlText, 'text/xml');
@@ -205,10 +225,9 @@ class ImageSubtitle extends SubtitleBase {
     this.zip = undefined;
   }
 
-  _download() {
+  _extract(fetchPromise) {
     return new Promise((resolve, reject) => {
-      const fetchP = fetch(this.url).then(r => r.blob());
-      const unzipP = fetchP.then(zipBlob => new JSZip().loadAsync(zipBlob));
+      const unzipP = fetchPromise.then(r => r.blob()).then(zipBlob => new JSZip().loadAsync(zipBlob));
       unzipP.then(zip => {
         zip
           .file('manifest_ttml2.xml')
@@ -335,8 +354,8 @@ class SubtitleFactory {
   static _buildImageBased(track, lang, bcp47) {
     const maxHeight = Math.max(...Object.values(track.ttDownloadables).map(d => d.height));
     const d = Object.values(track.ttDownloadables).find(d => d.height === maxHeight);
-    const url = Object.values(d.downloadUrls)[0];
-    return new ImageSubtitle(lang, bcp47, url);
+    const urls = Object.values(d.downloadUrls);
+    return new ImageSubtitle(lang, bcp47, urls);
   }
 
   static _buildTextBased(track, lang, bcp47) {
@@ -346,8 +365,8 @@ class SubtitleFactory {
       console.error(`Cannot find "${targetProfile}" for ${lang}`);
       return null;
     }
-    const url = Object.values(d.downloadUrls)[0];
-    return new TextSubtitle(lang, bcp47, url);
+    const urls = Object.values(d.downloadUrls);
+    return new TextSubtitle(lang, bcp47, urls);
   }
 }
 
