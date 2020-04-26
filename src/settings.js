@@ -93,7 +93,7 @@ function renderActiveSettings() {
   if (layoutId !== -1) {
     elem = document.querySelector(`.settings-layout > div[data-id="${layoutId}"]`);
     elem && elem.classList.add('active');
-  } 
+  }
   // primary font size
   const primaryFontSizeId = primarySizePresets.findIndex(k => (k.primaryImageScale === settings.primaryImageScale));
   if (primaryFontSizeId !== -1) {
@@ -137,7 +137,16 @@ function updateSecondaryFontSize(fontSizeId) {
 }
 
 
+function renderVersion() {
+  let elem = document.querySelector('#version');
+  if (elem) {
+    elem.textContent = VERSION;
+  }
+}
+
+
 window.addEventListener('load', evt => {
+  renderVersion();
   renderActiveSettings();
 
   // handle click events
