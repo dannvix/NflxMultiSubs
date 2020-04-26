@@ -1046,8 +1046,8 @@ class NflxMultiSubsManager {
             const defaultAudioTrack = manifest.audio_tracks.find(t => t.id == defaultAudioId);
             const defaultAudioLanguage = defaultAudioTrack.language;
             console.log(`Default audio track language: ${defaultAudioLanguage}`);
-            const autoSubtitleId = gSubtitles.findIndex(t => t.bcp47 == defaultAudioLanguage);
-            if (autoSubtitleId) {
+            const autoSubtitleId = gSubtitles.reverse().findIndex(t => t.bcp47 == defaultAudioLanguage);
+            if (autoSubtitleId >= 0) {
               console.log(`Subtitle #${autoSubtitleId} auto-enabled to match audio`);
               activateSubtitle(autoSubtitleId);
             }
