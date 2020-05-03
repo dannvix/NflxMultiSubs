@@ -359,8 +359,13 @@ class SubtitleFactory {
     //
     // "new_track_id" example "T:1:0;1;zh-Hant;1;1;"
     // the last bit is 1 for NoneTrack text tracks
-    const isNoneTrackBit = track.new_track_id && track.new_track_id.split(';').pop();
-    return isNoneTrackBit === '1';
+    try {
+      const isNoneTrackBit = track.new_track_id.split(';')[4];
+      return isNoneTrackBit === '1';
+    }
+    catch (err) {
+    }
+    return false;
   }
 
   static _buildImageBased(track, lang, bcp47) {
