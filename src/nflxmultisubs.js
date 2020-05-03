@@ -351,6 +351,13 @@ class SubtitleFactory {
     return this._buildTextBased(track, lang, bcp47);
   }
 
+  static isNoneTrack(track) {
+    // new_track_id example"T:1:0;1;zh-Hant;1;1;"
+    // the last bit is 1 for NoneTrack text tracks
+    const isNoneTrackBit = track.new_track_id.split(';')[4];
+    return isNoneTrackBit === '1';
+  }
+
   static _buildImageBased(track, lang, bcp47) {
     const maxHeight = Math.max(...Object.values(track.ttDownloadables).map(d => d.height));
     const d = Object.values(track.ttDownloadables).find(d => d.height === maxHeight);
@@ -378,6 +385,7 @@ const buildSubtitleList = textTracks => {
   // sorted by language in alphabetical order (to align with official UI)
   const subs = textTracks
     .filter(t => !t.isNoneTrack)
+    .filter(t => !SubtitleFactory.isNoneTrack(t))
     .map(t => SubtitleFactory.build(t));
   return subs.concat(dummy);
 };
@@ -1046,7 +1054,7 @@ class NflxMultiSubsManager {
             const defaultAudioTrack = manifest.audio_tracks.find(t => t.id == defaultAudioId);
             const defaultAudioLanguage = defaultAudioTrack.language;
             console.log(`Default audio track language: ${defaultAudioLanguage}`);
-            const autoSubtitleId = gSubtitles.reverse().findIndex(t => t.bcp47 == defaultAudioLanguage);
+            const autoSubtitleId = gSubtitles.findIndex(t => t.bcp47 == defaultAudioLanguage);
             if (autoSubtitleId >= 0) {
               console.log(`Subtitle #${autoSubtitleId} auto-enabled to match audio`);
               activateSubtitle(autoSubtitleId);
