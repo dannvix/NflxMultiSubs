@@ -352,9 +352,14 @@ class SubtitleFactory {
   }
 
   static isNoneTrack(track) {
-    // new_track_id example"T:1:0;1;zh-Hant;1;1;"
+    // Sometimes Netflix places "fake" text tracks into manifests.
+    // Such tracks have "isNoneTrack: false" and even have downloadable URLs,
+    // while their display name is "Off" (localized in UI language, e.g., "關閉").
+    // Here we use a huristic rule concluded by observation to filter those "fake" tracks out.
+    //
+    // "new_track_id" example "T:1:0;1;zh-Hant;1;1;"
     // the last bit is 1 for NoneTrack text tracks
-    const isNoneTrackBit = track.new_track_id.split(';')[4];
+    const isNoneTrackBit = track.new_track_id && track.new_track_id.split(';').pop();
     return isNoneTrackBit === '1';
   }
 
