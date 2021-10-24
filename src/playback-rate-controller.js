@@ -25,7 +25,7 @@ class PlaybackRateController {
     if (evt.ctrlKey || evt.altKey || evt.shiftKey || evt.metaKey) return;
     if ((evt.keyCode !== 219 /* [ */) && (evt.keyCode !== 221 /* ] */)) return;
 
-    const playerContainer = document.querySelector('.nf-player-container');
+    const playerContainer = document.querySelector('.watch-video');
     if (!playerContainer) return;
 
     const video = playerContainer.querySelector('video');
