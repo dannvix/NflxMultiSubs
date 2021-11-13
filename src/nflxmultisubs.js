@@ -450,7 +450,7 @@ class SubtitleMenu {
 const isPopupMenuElement = node => {
   return (
     node.nodeName.toLowerCase() === 'div' &&
-    node.classList.contains('audio-subtitle-controller')
+    node.querySelector('div[data-uia="selector-audio-subtitle"]')
   );
 };
 
@@ -824,7 +824,7 @@ class RendererLoop {
   // @returns {boolean} Successed?
   _appendSubtitleWrapper() {
     if (!this.subtitleWrapperElem || !this.subtitleWrapperElem.parentNode) {
-      const playerContainerElem = document.querySelector('.nf-player-container');
+      const playerContainerElem = document.querySelector('div[data-uia="video-canvas"]');
       if (!playerContainerElem) return false;
       this.subtitleWrapperElem = buildSecondarySubtitleElement(gRenderOptions);
       playerContainerElem.appendChild(this.subtitleWrapperElem);
