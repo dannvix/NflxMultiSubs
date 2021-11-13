@@ -351,14 +351,24 @@ class SubtitleFactory {
     // Such tracks have "isNoneTrack: false" and even have downloadable URLs,
     // while their display name is "Off" (localized in UI language, e.g., "關閉").
     // Here we use a huristic rule concluded by observation to filter those "fake" tracks out.
-    //
+    if (track.isNoneTrack) {
+      return true;
+    }
+
     // "new_track_id" example "T:1:0;1;zh-Hant;1;1;"
     // the last bit is 1 for NoneTrack text tracks
     try {
       const isNoneTrackBit = track.new_track_id.split(';')[4];
-      return isNoneTrackBit === '1';
+      if (isNoneTrackBit === '1') {
+        return true;
+      }
     }
     catch (err) {
+    }
+
+    // "rank" === -1
+    if (track.rank !== undefined && track.rank < 0) {
+      return true;
     }
     return false;
   }
@@ -389,7 +399,6 @@ const buildSubtitleList = textTracks => {
 
   // sorted by language in alphabetical order (to align with official UI)
   const subs = textTracks
-    .filter(t => !t.isNoneTrack)
     .filter(t => !SubtitleFactory.isNoneTrack(t))
     .map(t => SubtitleFactory.build(t));
   return subs.concat(dummy);
