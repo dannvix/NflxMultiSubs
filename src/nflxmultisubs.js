@@ -1032,7 +1032,7 @@ class NflxMultiSubsManager {
       .then(video => {
         try {
           const movieIdInUrl = extractMovieIdFromUrl();
-          let playingManifest = (manifest.movieId === movieId);
+          let playingManifest = (manifest.movieId === movieIdInUrl);
 
           if (!playingManifest) {
             // magic! ... div.VideoContainer > div#12345678 > video[src=blob:...]
@@ -1064,9 +1064,15 @@ class NflxMultiSubsManager {
 
           // select subtitle to match the default audio track
           try {
-            const defaultAudioId = manifest.defaultTrackOrderList[0].audioTrackId;
-            const defaultAudioTrack = manifest.audio_tracks.find(t => t.id == defaultAudioId);
-            const defaultAudioLanguage = defaultAudioTrack.language;
+            let defaultAudioId, defaultAudioTrack;
+            if (manifest.defaultTrackOrderList !== undefined) {
+              defaultAudioId = manifest.defaultTrackOrderList[0].audioTrackId;
+              defaultAudioTrack = manifest.audio_tracks.find(t => t.id == defaultAudioId);
+            }
+            else if (manifest.recommendedMedia !== undefined) {
+              defaultAudioId = manifest.recommendedMedia.audioTrackId;
+              defaultAudioTrack = manifest.audio_tracks.find(t => t.new_track_id == defaultAudioId);
+            }
             console.log(`Default audio track language: ${defaultAudioLanguage}`);
             const autoSubtitleId = gSubtitles.findIndex(t => t.bcp47 == defaultAudioLanguage);
             if (autoSubtitleId >= 0) {
