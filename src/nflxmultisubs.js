@@ -107,20 +107,15 @@ class SubtitleBase {
   _download() {
     if (!this.urls) return Promise.resolve();
 
-    console.log('Selecting fastest server, candidates: ',
+    console.debug('Selecting fastest server, candidates: ',
       this.urls.map(u => u.substr(0, 24)));
 
-    let download_started = false;
-    return new Promise((resolve, reject) => {
-      this.urls.forEach(url => {
-        fetch(new Request(url), {method: 'HEAD'}).then(r => {
-          if (download_started) return;
-
-          download_started = true;
-          console.log('Fastest: ', url.substr(0, 24));
-          this._extract(fetch(url)).then(() => resolve());
-        });
-      });
+    return Promise.race(
+      this.urls.map(url => fetch(new Request(url), {method: 'HEAD'}))
+    ).then(r => {
+      const url = r.url;
+      console.debug(`Fastest: ${url.substr(0, 24)}`);
+      return this._extract(fetch(url));
     });
   }
 
