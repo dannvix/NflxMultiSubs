@@ -410,35 +410,30 @@ const SUBTITLE_LIST_CLASSNAME = 'nflxmultisubs-subtitle-list';
 class SubtitleMenu {
   constructor() {
     this.elem = document.createElement('div');
-    this.elem.classList.add('track-list', 'structural', 'track-list-subtitles');
     this.elem.classList.add(SUBTITLE_LIST_CLASSNAME);
   }
 
-  render() {
-    const checkIcon = `<span class="video-controls-check">
-      <svg class="svg-icon svg-icon-nfplayerCheck" focusable="false">
-      <use filter="" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#nfplayerCheck"></use>
-      </svg></span>`;
+  render(nativeSubtitleMenuContainerElem) {
+    const checkIcon = `<svg viewBox="0 0 24 24" class="ltr-17kyzwm">
+      <path fill="currentColor" d="M3.707 12.293l-1.414 1.414L8 19.414 21.707 5.707l-1.414-1.414L8 16.586z">
+      </path></svg>`;
 
-    const loadingIcon = `<span class="video-controls-check">
-      <svg class="svg-icon svg-icon-nfplayerCheck" focusable="false" viewBox="0 -5 50 55">
+    const loadingIcon = `<svg class="svg-icon svg-icon-nfplayerCheck" focusable="false" viewBox="0 -5 50 55">
           <path d="M 6 25 C6 21, 0 21, 0 25 C0 57, 49 59, 50 25 C50 50, 8 55, 6 25" stroke="transparent" fill="red">
             <animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.9s" repeatCount="indefinite"/>
           </path>
       </svg></span>`;
 
-    this.elem.innerHTML = `<h3 class="list-header" style="min-width:10em">Secondary Subtitles</h3>`;
+    this.elem.innerHTML = `<h3>Secondary Subtitles</h3>`;
 
     const listElem = document.createElement('ul');
     gSubtitles.forEach((sub, id) => {
       let item = document.createElement('li');
-      item.classList.add('track');
       if (sub.active) {
         const icon = sub.state === 'LOADING' ? loadingIcon : checkIcon;
-        item.classList.add('selected');
-        item.innerHTML = `${icon}${sub.lang}`;
+        item.innerHTML = `<div>${icon}<div>${sub.lang}</div></div>`;
       } else {
-        item.innerHTML = sub.lang;
+        item.innerHTML = `<div><div>${sub.lang}</div></div>`;
         item.addEventListener('click', () => {
           activateSubtitle(id);
         });
@@ -446,17 +441,21 @@ class SubtitleMenu {
       listElem.appendChild(item);
     });
     this.elem.appendChild(listElem);
+
+    // Dirty hack to mimic Netflix native subtitle menu.
+    // This routine may be called from the MutationObserver, at that moment
+    // the native subtitle menu may not be ready in DOM tree yet
+    const subtitleMenuElem = document.querySelector('div[data-uia="selector-audio-subtitle"]') || nativeSubtitleMenuContainerElem;
+    if (subtitleMenuElem) {
+      subtitleMenuElem.firstElementChild.classList.forEach(x => this.elem.classList.add(x));
+      ['div>h3', 'div>ul', 'div>ul>li', 'div>ul>li>div>svg', 'div>ul>li>div>div'].forEach(selector =>
+        subtitleMenuElem.querySelector(selector).classList.forEach(x =>
+          [].forEach.call(this.elem.querySelectorAll(selector), elem => elem.classList.add(x))));
+    }
   }
 }
 
 // -----------------------------------------------------------------------------
-
-const isPopupMenuElement = node => {
-  return (
-    node.nodeName.toLowerCase() === 'div' &&
-    node.querySelector('div[data-uia="selector-audio-subtitle"]')
-  );
-};
 
 // FIXME: can we disconnect this observer once our menu is injected ?
 // we still don't know whether Netflix would re-build the pop-up menu after
@@ -464,20 +463,21 @@ const isPopupMenuElement = node => {
 const bodyObserver = new MutationObserver(mutations => {
   mutations.forEach(mutation => {
     mutation.addedNodes.forEach(node => {
-      if (isPopupMenuElement(node)) {
+      // FIXME: performance hazard
+      const subtitleMenuElem = node.querySelector('div[data-uia="selector-audio-subtitle"]');
+      if (subtitleMenuElem) {
         // popup menu attached
-        if (!node.getElementsByClassName(SUBTITLE_LIST_CLASSNAME).length) {
+        if (!subtitleMenuElem.getElementsByClassName(SUBTITLE_LIST_CLASSNAME).length) {
           if (!gSubtitleMenu) {
             gSubtitleMenu = new SubtitleMenu();
-            gSubtitleMenu.render();
+            gSubtitleMenu.render(subtitleMenuElem);
           }
-          node.appendChild(gSubtitleMenu.elem);
+          subtitleMenuElem.appendChild(gSubtitleMenu.elem);
+          subtitleMenuElem.parentNode.parentNode.parentNode.style.left = '';
+          subtitleMenuElem.parentNode.parentNode.parentNode.style.right = '10px';
+          // debugger;
         }
-      }
-    });
-    mutation.removedNodes.forEach(node => {
-      if (isPopupMenuElement(node)) {
-        // popup menu detached
+        gSubtitleMenu.render(subtitleMenuElem);
       }
     });
   });
