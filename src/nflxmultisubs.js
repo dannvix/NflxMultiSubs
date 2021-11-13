@@ -522,8 +522,7 @@ const buildSecondarySubtitleElement = options => {
 
   const wrapper = document.createElement('div');
   wrapper.classList.add('nflxmultisubs-subtitle-wrapper');
-  wrapper.style =
-    'position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; display:flex; align-items:center;';
+  wrapper.style = 'position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; display:flex; align-items:center; pointer-events: none;';
   wrapper.appendChild(container);
   return wrapper;
 };
@@ -841,9 +840,7 @@ class RendererLoop {
     // NOTE: we cannot put `primaryImageSubSvg` into instance state,
     // because there are multiple instance of the SVG and they're switched
     // when the langauge of primary subtitles is switched.
-    const primaryImageSubSvg = document.querySelector(
-      '.image-based-timed-text svg'
-    );
+    const primaryImageSubSvg = document.querySelector('.image-based-subtitles svg');
     if (primaryImageSubSvg) {
       this.primaryImageTransformer.transform(primaryImageSubSvg, active, dirty);
     }
