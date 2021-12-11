@@ -23,7 +23,8 @@ class PlaybackRateController {
 
   _keyUpHandler(evt) {
     if (evt.ctrlKey || evt.altKey || evt.shiftKey || evt.metaKey) return;
-    if ((evt.keyCode !== 219 /* [ */) && (evt.keyCode !== 221 /* ] */)) return;
+    if ((evt.keyCode !== 219 /* [ */) && (evt.keyCode !== 221 /* ] */) &&
+        (evt.keyCode !== 8 /* Backspace */)) return;
 
     const playerContainer = document.querySelector('.watch-video');
     if (!playerContainer) return;
@@ -34,6 +35,7 @@ class PlaybackRateController {
     let playbackRate = video.playbackRate;
     if (evt.keyCode === 219) playbackRate -= 0.1; // key [ pressed
     else if (evt.keyCode == 221) playbackRate += 0.1; // ] pressed
+    else if (evt.keyCode === 8) playbackRate = 1.0; // Backspace pressed
 
     playbackRate = Math.max(Math.min(playbackRate, 3.0), 0.1);
     video.playbackRate = playbackRate;
