@@ -374,8 +374,9 @@ class SubtitleFactory {
   }
 
   static _buildImageBased(track, lang, bcp47) {
-    const maxHeight = Math.max(...Object.values(track.ttDownloadables).map(d => d.height));
-    const d = Object.values(track.ttDownloadables).find(d => d.height === maxHeight);
+    const maxHeight = Math.max(...Object.values(track.ttDownloadables)
+      .map(d => Number.isInteger(d.height) ? d.height : 0));
+    const d = Object.values(track.ttDownloadables).find(d => maxHeight === 0 || d.height === maxHeight);
     const urls = Object.values(d.downloadUrls);
     return new ImageSubtitle(lang, bcp47, urls);
   }
