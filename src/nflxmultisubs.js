@@ -465,7 +465,7 @@ const bodyObserver = new MutationObserver(mutations => {
   mutations.forEach(mutation => {
     mutation.addedNodes.forEach(node => {
       // FIXME: performance hazard
-      const subtitleMenuElem = node.querySelector('div[data-uia="selector-audio-subtitle"]');
+      const subtitleMenuElem = node && node.querySelector && node.querySelector('div[data-uia="selector-audio-subtitle"]');
       if (subtitleMenuElem) {
         // popup menu attached
         if (!subtitleMenuElem.getElementsByClassName(SUBTITLE_LIST_CLASSNAME).length) {
