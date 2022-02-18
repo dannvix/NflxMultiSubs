@@ -374,8 +374,9 @@ class SubtitleFactory {
   }
 
   static _buildImageBased(track, lang, bcp47) {
-    const maxHeight = Math.max(...Object.values(track.ttDownloadables).map(d => d.height));
-    const d = Object.values(track.ttDownloadables).find(d => d.height === maxHeight);
+    const maxHeight = Math.max(...Object.values(track.ttDownloadables)
+      .map(d => Number.isInteger(d.height) ? d.height : 0));
+    const d = Object.values(track.ttDownloadables).find(d => maxHeight === 0 || d.height === maxHeight);
     const urls = Object.values(d.downloadUrls);
     return new ImageSubtitle(lang, bcp47, urls);
   }
@@ -464,7 +465,7 @@ const bodyObserver = new MutationObserver(mutations => {
   mutations.forEach(mutation => {
     mutation.addedNodes.forEach(node => {
       // FIXME: performance hazard
-      const subtitleMenuElem = node.querySelector('div[data-uia="selector-audio-subtitle"]');
+      const subtitleMenuElem = node && node.querySelector && node.querySelector('div[data-uia="selector-audio-subtitle"]');
       if (subtitleMenuElem) {
         // popup menu attached
         if (!subtitleMenuElem.getElementsByClassName(SUBTITLE_LIST_CLASSNAME).length) {
@@ -1070,8 +1071,9 @@ class NflxMultiSubsManager {
               defaultAudioId = manifest.recommendedMedia.audioTrackId;
               defaultAudioTrack = manifest.audio_tracks.find(t => t.new_track_id == defaultAudioId);
             }
-            console.log(`Default audio track language: ${defaultAudioLanguage}`);
-            const autoSubtitleId = gSubtitles.findIndex(t => t.bcp47 == defaultAudioLanguage);
+
+            console.log(`Default audio track language: ${defaultAudioTrack.language}`);
+            const autoSubtitleId = gSubtitles.findIndex(t => t.bcp47 == defaultAudioTrack.language);
             if (autoSubtitleId >= 0) {
               console.log(`Subtitle #${autoSubtitleId} auto-enabled to match audio`);
               activateSubtitle(autoSubtitleId);
