@@ -5,11 +5,13 @@ const kDefaultSettings = {
   primaryImageOpacity: 0.85,
   primaryTextScale: 0.95,
   primaryTextOpacity: 0.85,
+  primaryTextColor: "#ffffff",
   secondaryImageScale: 0.5,
   secondaryImageOpacity: 0.85,
   secondaryTextScale: 1.0,
   secondaryTextStroke: 2.0,
   secondaryTextOpacity: 0.85,
+  secondaryTextColor: "#ffffff"
 };
 
 module.exports = kDefaultSettings;

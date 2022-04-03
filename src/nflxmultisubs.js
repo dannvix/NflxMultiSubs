@@ -207,7 +207,8 @@ class TextSubtitle extends SubtitleBase {
     text.setAttributeNS(null, 'opacity', options.secondaryTextOpacity);
     text.style.fontSize = `${fontSize * options.secondaryTextScale}px`;
     text.style.fontFamily = 'Arial, Helvetica';
-    text.style.fill = 'white';
+    text.style.fill = options.secondaryTextColor;
+    text.style.fontWeight = '600';
     text.style.stroke = 'black';
     text.textContent = textContent;
     return [text];
@@ -464,7 +465,7 @@ const bodyObserver = new MutationObserver(mutations => {
   mutations.forEach(mutation => {
     mutation.addedNodes.forEach(node => {
       // FIXME: performance hazard
-      const subtitleMenuElem = node.querySelector('div[data-uia="selector-audio-subtitle"]');
+      const subtitleMenuElem = typeof node.querySelector !== "undefined" ? node.querySelector('div[data-uia="selector-audio-subtitle"]') : null;
       if (subtitleMenuElem) {
         // popup menu attached
         if (!subtitleMenuElem.getElementsByClassName(SUBTITLE_LIST_CLASSNAME).length) {
@@ -641,10 +642,12 @@ class PrimaryTextTransformer {
     const options = gRenderOptions;
     const opacity = options.primaryTextOpacity;
     const scale = options.primaryTextScale;
+    const color = options.primaryTextColor;
     const newFontSize = fontSize * scale;
     const styleText = `.player-timedtext-text-container span {
         font-size: ${newFontSize}px !important;
         opacity: ${opacity};
+        color: ${color};
       }`;
     style.textContent = styleText;
 
